@@ -3,7 +3,6 @@ plugins {
     id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
-
     kotlin("plugin.serialization") version "2.2.0"
 }
 
@@ -60,4 +59,9 @@ dependencies {
 
 
     implementation("ch.qos.logback:logback-classic:$logback_version")
+
+    testImplementation("org.junit.jupiter:junit-jupiter:5.10.1")
+    testImplementation(kotlin("test"))
+    androidTestImplementation("org.junit.jupiter:junit-jupiter:5.10.1")
+    androidTestImplementation(kotlin("test"))
 }

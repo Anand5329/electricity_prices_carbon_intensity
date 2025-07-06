@@ -1,18 +1,9 @@
 package com.example.electricity_prices_and_carbon_intensity.https
 
-import io.ktor.client.*
-import io.ktor.client.engine.cio.*
-import io.ktor.client.request.get
+import io.ktor.client.call.body
 import io.ktor.client.statement.HttpResponse
 import kotlinx.coroutines.runBlocking
-import java.io.Closeable
-
-import io.ktor.client.call.*
-import io.ktor.client.plugins.contentnegotiation.*
-import io.ktor.client.plugins.logging.Logging
-import io.ktor.serialization.kotlinx.json.*
-import kotlinx.serialization.*
-import kotlinx.serialization.json.*
+import kotlinx.serialization.Serializable
 
 @Serializable
 data class IntensityData(val forecast: Int, val actual: Int, val index: String)
@@ -23,17 +14,7 @@ data class PeriodData(val from: String, val to: String, val intensity: Intensity
 @Serializable
 data class ResponseData(val data: List<PeriodData>)
 
-class CarbonIntensityCaller: Closeable {
-    
-    private val client = HttpClient(CIO) {
-        install(ContentNegotiation) {
-            json(Json {
-                prettyPrint = true
-                isLenient = true
-            })
-        }
-        install(Logging)
-    }
+class CarbonIntensityCaller: ApiCaller(BASE_URL) {
 
     suspend fun getCurrentIntensity(): IntensityData {
         val response: HttpResponse = get("intensity/")
@@ -54,22 +35,6 @@ class CarbonIntensityCaller: Closeable {
         } else {
             return null
         }
-    }
-
-    private suspend fun get(endpoint: String): HttpResponse {
-        return client.get(BASE_URL + endpoint)
-    }
-
-    private fun isValidResponse(response: HttpResponse): Boolean {
-        return response.status.value in 200..299
-    }
-
-    override fun close() {
-        client.close()
-    }
-
-    protected fun finalize() {
-        client.close()
     }
 
     companion object {
