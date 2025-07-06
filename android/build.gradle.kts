@@ -1,3 +1,6 @@
+plugins {
+    kotlin("jvm")
+}
 allprojects {
     repositories {
         google()
@@ -16,6 +19,15 @@ subprojects {
     project.evaluationDependsOn(":app")
 }
 
-tasks.register<Delete>("clean") {
+tasks.register<Delete>("clean-gradle") {
     delete(rootProject.layout.buildDirectory)
+}
+dependencies {
+    implementation(kotlin("stdlib-jdk8"))
+}
+repositories {
+    mavenCentral()
+}
+kotlin {
+    jvmToolchain(8)
 }
