@@ -5,6 +5,10 @@ import io.ktor.client.statement.HttpResponse
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Serializable
 
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+
+
 @Serializable
 data class IntensityData(val forecast: Int, val actual: Int, val index: String)
 
@@ -18,27 +22,41 @@ class CarbonIntensityCaller: ApiCaller(BASE_URL) {
 
     suspend fun getCurrentIntensity(): IntensityData {
         val response: HttpResponse = get("intensity/")
-        var intensity: IntensityData? = null
+        var intensity: List<IntensityData> = listOf()
         if (isValidResponse(response)) {
             intensity = parseIntensity(response)
         }
-        if (intensity == null) {
+        if (intensity.isEmpty()) {
             throw Error("No intensity found")
         }
-        return intensity
+        return intensity.get(0)
     }
 
-    private suspend fun parseIntensity(response: HttpResponse): IntensityData? {
-        val data: ResponseData = response.body()
-        if (data.data.isNotEmpty()) {
-            return data.data[0].intensity
+    suspend fun getIntensityForDate(date: LocalDate): List<PeriodData> {
+        val response: HttpResponse = get("intensity/date/${date.format(DATE_FORMATTER)}")
+        if (!isValidResponse(response)) {
+            return listOf()
         } else {
-            return null
+            return parseIntensityAndTime(response)
         }
+    }
+
+    private suspend fun parseIntensity(response: HttpResponse): List<IntensityData> {
+        return parseIntensityFromPeriod(parseIntensityAndTime(response))
+    }
+
+    private suspend fun parseIntensityFromPeriod(periods: List<PeriodData>): List<IntensityData> {
+        return periods.map { it.intensity }
+    }
+
+    private suspend fun parseIntensityAndTime(response: HttpResponse): List<PeriodData> {
+        val data: ResponseData = response.body()
+        return data.data
     }
 
     companion object {
         const val BASE_URL: String = "https://api.carbonintensity.org.uk/"
+        val DATE_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
     }
 }
 
