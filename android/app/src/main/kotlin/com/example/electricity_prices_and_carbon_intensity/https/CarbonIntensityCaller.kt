@@ -5,8 +5,10 @@ import io.ktor.client.statement.HttpResponse
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Serializable
 
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.format
+import kotlinx.datetime.format.*
 
 
 @Serializable
@@ -18,10 +20,10 @@ data class PeriodData(val from: String, val to: String, val intensity: Intensity
 @Serializable
 data class ResponseData(val data: List<PeriodData>)
 
-class CarbonIntensityCaller: ApiCaller(BASE_URL) {
+class CarbonIntensityCaller : ApiCaller(BASE_URL) {
 
     suspend fun getCurrentIntensity(): IntensityData {
-        val response: HttpResponse = get("intensity/")
+        val response: HttpResponse = get("$INTENSITY/")
         var intensity: List<IntensityData> = listOf()
         if (isValidResponse(response)) {
             intensity = parseIntensity(response)
@@ -33,11 +35,36 @@ class CarbonIntensityCaller: ApiCaller(BASE_URL) {
     }
 
     suspend fun getIntensityForDate(date: LocalDate): List<PeriodData> {
-        val response: HttpResponse = get("intensity/date/${date.format(DATE_FORMATTER)}")
-        if (!isValidResponse(response)) {
-            return listOf()
+        val response: HttpResponse = get("$INTENSITY/date/${date.format(DATE_FORMATTER)}/")
+        return if (!isValidResponse(response)) {
+            listOf()
         } else {
-            return parseIntensityAndTime(response)
+            parseIntensityAndTime(response)
+        }
+    }
+
+    suspend fun getIntensityFrom(
+        from: LocalDateTime,
+        modifier: FromModifier = FromModifier.NONE,
+        to: LocalDateTime? = null
+    ): List<PeriodData> {
+        val modifyString: String = when (modifier) {
+            FromModifier.FORWARD_24 -> "fw24/"
+            FromModifier.FORWARD_48 -> "fw48/"
+            FromModifier.PAST_24 -> "pt24/"
+            FromModifier.TO -> (to
+                ?: throw IllegalArgumentException("Please supply a valid to date time")).format(
+                DATE_TIME_FORMATTER
+            ).toString() + "/"
+
+            FromModifier.NONE -> ""
+        }
+        val response: HttpResponse =
+            get("$INTENSITY/${from.format(DATE_TIME_FORMATTER)}/$modifyString")
+        return if (!isValidResponse(response)) {
+            listOf()
+        } else {
+            parseIntensityAndTime(response)
         }
     }
 
@@ -56,8 +83,18 @@ class CarbonIntensityCaller: ApiCaller(BASE_URL) {
 
     companion object {
         const val BASE_URL: String = "https://api.carbonintensity.org.uk/"
-        val DATE_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+        const val INTENSITY: String = "intensity"
+        val DATE_FORMATTER = LocalDate.Format { byUnicodePattern("yyyy-MM-dd") }
+        val DATE_TIME_FORMATTER = LocalDateTime.Format { byUnicodePattern("yyyy-MM-ddTHH:mmZ") }
     }
+}
+
+enum class FromModifier {
+    NONE,
+    FORWARD_24,
+    FORWARD_48,
+    PAST_24,
+    TO
 }
 
 fun main() = runBlocking {
