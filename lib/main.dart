@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'nativeAdapter.dart';
 
 void main() {
   runApp(const MyApp());
@@ -28,7 +30,7 @@ class MyApp extends StatelessWidget {
         //
         // This works for code too, not just values: Most code changes can be
         // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.lightGreen),
       ),
       home: const MyHomePage(title: 'Flutter Demo Home Page'),
     );
@@ -64,6 +66,25 @@ class _MyHomePageState extends State<MyHomePage> {
       // _counter without calling setState(), then the build method would not be
       // called again, and so nothing would appear to happen.
       _counter++;
+    });
+  }
+
+  void _resetCounter() {
+    setState(() {
+      _counter = 0;
+    });
+  }
+
+  Future<void> _refreshCarbonIntensity() async {
+    int ci = -1;
+    try {
+      ci = await NativeAdapter.updateCarbonIntensity();
+    } on PlatformException catch (e) {
+      print(e.message!);
+    }
+    
+    setState(() {
+      _counter = ci;
     });
   }
 
@@ -104,11 +125,16 @@ class _MyHomePageState extends State<MyHomePage> {
           // wireframe for each widget.
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
+            BigCounter(counter: _counter),
+            SizedBox(height: 10),
+            ElevatedButton(
+              onPressed: _resetCounter,
+              child: Text('Reset'),
             ),
+            SizedBox(height: 10),
+            ElevatedButton(
+              onPressed: _refreshCarbonIntensity,
+              child: Text("Refresh CI")),
           ],
         ),
       ),
@@ -117,6 +143,34 @@ class _MyHomePageState extends State<MyHomePage> {
         tooltip: 'Increment',
         child: const Icon(Icons.add),
       ), // This trailing comma makes auto-formatting nicer for build methods.
+    );
+  }
+}
+
+class BigCounter extends StatelessWidget {
+  const BigCounter({
+    super.key,
+    required int counter,
+  }) : _counter = counter;
+
+  final int _counter;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final textStyle = theme.textTheme.displayMedium!.copyWith(
+      color: theme.colorScheme.onPrimary,
+    );
+
+    return Card(
+      color: theme.colorScheme.primary,
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Text(
+          '$_counter',
+          style: textStyle,
+        ),
+      ),
     );
   }
 }
