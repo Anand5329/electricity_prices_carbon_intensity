@@ -6,6 +6,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Serializable
 
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalTime
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.format
 import kotlinx.datetime.format.*
@@ -49,9 +50,9 @@ class CarbonIntensityCaller : ApiCaller(BASE_URL) {
         to: LocalDateTime? = null
     ): List<PeriodData> {
         val modifyString: String = when (modifier) {
-            FromModifier.FORWARD_24 -> "fw24/"
-            FromModifier.FORWARD_48 -> "fw48/"
-            FromModifier.PAST_24 -> "pt24/"
+            FromModifier.FORWARD_24 -> "fw24h/"
+            FromModifier.FORWARD_48 -> "fw48h/"
+            FromModifier.PAST_24 -> "pt24h/"
             FromModifier.TO -> (to
                 ?: throw IllegalArgumentException("Please supply a valid to date time")).format(
                 DATE_TIME_FORMATTER
@@ -84,8 +85,13 @@ class CarbonIntensityCaller : ApiCaller(BASE_URL) {
     companion object {
         const val BASE_URL: String = "https://api.carbonintensity.org.uk/"
         const val INTENSITY: String = "intensity"
-        val DATE_FORMATTER = LocalDate.Format { byUnicodePattern("yyyy-MM-dd") }
-        val DATE_TIME_FORMATTER = LocalDateTime.Format { byUnicodePattern("yyyy-MM-ddTHH:mmZ") }
+        val DATE_FORMATTER = LocalDate.Format { date(LocalDate.Formats.ISO) }
+        val DATE_TIME_FORMATTER = LocalDateTime.Format {
+            date(LocalDate.Formats.ISO)
+            char('T')
+            hour(); char(':'); minute()
+            char('Z')
+        }
     }
 }
 
@@ -97,9 +103,7 @@ enum class FromModifier {
     TO
 }
 
-fun main() = runBlocking {
-    val ci = CarbonIntensityCaller()
-    val response = ci.getCurrentIntensity()
-    println(response)
-    ci.close()
+fun main() {
+    val ci = runBlocking { CarbonIntensityCaller().getCurrentIntensity() }
+    println(ci)
 }
