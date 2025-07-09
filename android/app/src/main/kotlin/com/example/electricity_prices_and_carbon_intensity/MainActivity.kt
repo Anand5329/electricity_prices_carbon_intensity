@@ -1,5 +1,6 @@
 package com.example.electricity_prices_and_carbon_intensity
 
+import android.util.Log
 import com.example.electricity_prices_and_carbon_intensity.https.CarbonIntensityCaller
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -15,7 +16,7 @@ class MainActivity : FlutterActivity() {
   override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
     super.configureFlutterEngine(flutterEngine)
     GeneratedPluginRegistrant.registerWith(flutterEngine)
-    val channel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL_NAME)
+    val channel = MethodChannel(flutterEngine.dartExecutor, CHANNEL_NAME)
     channel.setMethodCallHandler(MainActivity::channelHandler)
   }
 
@@ -23,9 +24,10 @@ class MainActivity : FlutterActivity() {
     private fun channelHandler(call: MethodCall, result: Result) {
       if (call.method == "getCarbonIntensity") {
         val ci = runBlocking { CarbonIntensityCaller().getCurrentIntensity() }
-        result.success(ci)
+        Log.v("MainActivity.channelHandler", "here $ci")
+        result.success(ci.actual)
       } else {
-        result.notImplemented()
+         result.notImplemented()
       }
     }
   }
