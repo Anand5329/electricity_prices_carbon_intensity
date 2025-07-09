@@ -1,10 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:logger/logger.dart';
 import 'nativeAdapter.dart';
 
 void main() {
   runApp(const MyApp());
 }
+
+var logger = Logger(
+  filter: null,
+  printer: PrettyPrinter(),
+  output: null,
+);
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -80,7 +87,7 @@ class _MyHomePageState extends State<MyHomePage> {
     try {
       ci = await NativeAdapter.updateCarbonIntensity();
     } on PlatformException catch (e) {
-      print(e.message!);
+      logger.e(e.message!);
     }
     
     setState(() {
