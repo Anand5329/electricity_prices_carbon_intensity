@@ -27,14 +27,10 @@ class MainActivity : FlutterActivity() {
             if (call.method == "getCarbonIntensity") {
                 var caller: CarbonIntensityCaller? = null
                 try {
-                    Log.v("MainActivity.channel", "here")
                     caller = CarbonIntensityCaller()
-                    Log.v("MainActivity.channel", "here2")
                     val ci: IntensityData = runBlocking { caller!!.getCurrentIntensity() }
-                    Log.v("MainActivity.channel", "here3")
                     caller!!.close()
-                    Log.v("MainActivity.channel", "here $ci")
-                    result.success(ci.actual)
+                    result.success(ci.actual?: ci.forecast?: -1)
                 } catch (e: Exception) {
                     Log.v(TAG, e.message!!, e)
                 } finally {

@@ -12,7 +12,7 @@ import kotlinx.datetime.format.*
 
 
 @Serializable
-data class IntensityData(val forecast: Int, val actual: Int, val index: String)
+data class IntensityData(val forecast: Int?, val actual: Int?, val index: String?)
 
 @Serializable
 data class PeriodData(val from: String, val to: String, val intensity: IntensityData)
