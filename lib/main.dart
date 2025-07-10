@@ -1,4 +1,6 @@
+import 'package:electricity_prices_and_carbon_intensity/chart.dart';
 import 'package:electricity_prices_and_carbon_intensity/httpclient.dart';
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:logger/logger.dart';
@@ -66,6 +68,9 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   late int _counter = 0;
+  final _caller = CarbonIntensityCaller();
+  late CarbonIntensityChartGenerator _chartGenerator;
+  LineChartData? _chartData = null;
 
   void _resetCounter() {
     setState(() {
@@ -76,7 +81,7 @@ class _MyHomePageState extends State<MyHomePage> {
   Future<int> _getCarbonIntensity() async {
     try {
       // return await NativeAdapter.updateCarbonIntensity();
-      final intensity = await CarbonIntensityCaller().getCurrentIntensity();
+      final intensity = await _caller.getCurrentIntensity();
       return CarbonIntensityCaller.convertToInt(intensity);
     } on Exception catch (e) {
       logger.e(e.toString());
@@ -100,10 +105,19 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
+  Future<void> _refreshChartData() async {
+    final chartData = await _chartGenerator.generateChart();
+    setState(() {
+      _chartData = chartData;
+    });
+  }
+
   @override
   void initState() {
     super.initState();
+    _chartGenerator = CarbonIntensityChartGenerator(_caller);
     _refreshCarbonIntensity();
+    _refreshChartData();
   }
 
   @override
@@ -145,6 +159,21 @@ class _MyHomePageState extends State<MyHomePage> {
           children: <Widget>[
             // BigCounter(counter: _counter),
             BigAnimatedCounter(count: _counter),
+            _chartData == null? SizedBox() :
+            AspectRatio(
+              aspectRatio: 1.70,
+              child: Padding(
+                padding: const EdgeInsets.only(
+                  right: 18,
+                  left: 12,
+                  top: 24,
+                  bottom: 12,
+                ),
+                child: LineChart(
+                  _chartData!
+                ),
+              ),
+            )
           ],
         ),
       ),
