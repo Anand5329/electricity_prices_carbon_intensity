@@ -1,3 +1,4 @@
+import 'package:electricity_prices_and_carbon_intensity/httpclient.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:logger/logger.dart';
@@ -74,9 +75,11 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<int> _getCarbonIntensity() async {
     try {
-      return await NativeAdapter.updateCarbonIntensity();
-    } on PlatformException catch (e) {
-      logger.e(e.message!);
+      // return await NativeAdapter.updateCarbonIntensity();
+      final intensity = await CarbonIntensityCaller().getCurrentIntensity();
+      return CarbonIntensityCaller.convertToInt(intensity);
+    } on Exception catch (e) {
+      logger.e(e.toString());
       return -1;
     }
   }
