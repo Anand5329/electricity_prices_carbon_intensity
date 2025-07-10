@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:logger/logger.dart';
+import 'animatedCounter.dart';
 import 'nativeAdapter.dart';
 
 void main() {
@@ -63,7 +64,11 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+  late int _counter;
+
+  _MyHomePageState() {
+    () async {_counter = await _getCarbonIntensity();};
+  }
 
   void _incrementCounter() {
     setState(() {
@@ -82,17 +87,31 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  Future<void> _refreshCarbonIntensity() async {
-    int ci = -1;
+  Future<int> _getCarbonIntensity() async {
     try {
-      ci = await NativeAdapter.updateCarbonIntensity();
+      return await NativeAdapter.updateCarbonIntensity();
     } on PlatformException catch (e) {
       logger.e(e.message!);
+      return -1;
+    }
+  }
+
+  Future<void> _refreshCarbonIntensity() async {
+    _resetCounter();
+    int ci = -1;
+    ci = await _getCarbonIntensity();
+
+    if (ci != -1) {
+      for (int i = 0; i <= ci; i++) {
+        setState(() {
+          _counter = i;
+        });
+      }
+    } else {
+      logger.e("Could not fetch latest CI");
     }
     
-    setState(() {
-      _counter = ci;
-    });
+
   }
 
   @override
@@ -132,13 +151,9 @@ class _MyHomePageState extends State<MyHomePage> {
           // wireframe for each widget.
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            BigCounter(counter: _counter),
-            SizedBox(height: 10),
-            ElevatedButton(
-              onPressed: _resetCounter,
-              child: Text('Reset'),
-            ),
-            SizedBox(height: 10),
+            // BigCounter(counter: _counter),
+            BigAnimatedCounter(count: _counter),
+            SizedBox(height: 20),
             ElevatedButton(
               onPressed: _refreshCarbonIntensity,
               child: Text("Refresh CI")),
@@ -154,29 +169,26 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 }
 
-class BigCounter extends StatelessWidget {
-  const BigCounter({
+class BigAnimatedCounter extends AnimatedCounter {
+
+  static const Duration ONE_SECOND = Duration(seconds: 1);
+
+  const BigAnimatedCounter({
     super.key,
-    required int counter,
-  }) : _counter = counter;
+    required super.count,
+    super.curve = Curves.fastOutSlowIn,
+}): super(duration: ONE_SECOND, textWrapper: _bigText);
 
-  final int _counter;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final textStyle = theme.textTheme.displayMedium!.copyWith(
-      color: theme.colorScheme.onPrimary,
+  static Widget _bigText(String text, ThemeData theme) {
+    final textStyle = theme.textTheme.displayLarge!.copyWith(
+      color: theme.colorScheme.primary,
     );
 
-    return Card(
-      color: theme.colorScheme.primary,
-      child: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Text(
-          '$_counter',
-          style: textStyle,
-        ),
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Text(
+        text,
+        style: textStyle,
       ),
     );
   }
