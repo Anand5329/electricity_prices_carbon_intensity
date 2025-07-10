@@ -40,7 +40,7 @@ class MyApp extends StatelessWidget {
         // tested with just a hot reload.
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.lightGreen),
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const MyHomePage(title: 'Current Carbon Intensity'),
     );
   }
 }
@@ -64,22 +64,7 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  late int _counter;
-
-  _MyHomePageState() {
-    () async {_counter = await _getCarbonIntensity();};
-  }
-
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
-  }
+  late int _counter = 0;
 
   void _resetCounter() {
     setState(() {
@@ -110,8 +95,12 @@ class _MyHomePageState extends State<MyHomePage> {
     } else {
       logger.e("Could not fetch latest CI");
     }
-    
+  }
 
+  @override
+  void initState() {
+    super.initState();
+    _refreshCarbonIntensity();
   }
 
   @override
@@ -153,17 +142,13 @@ class _MyHomePageState extends State<MyHomePage> {
           children: <Widget>[
             // BigCounter(counter: _counter),
             BigAnimatedCounter(count: _counter),
-            SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _refreshCarbonIntensity,
-              child: Text("Refresh CI")),
           ],
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
+        onPressed: _refreshCarbonIntensity,
+        tooltip: 'Refresh Carbon Intensity',
+        child: const Icon(Icons.refresh_rounded),
       ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
