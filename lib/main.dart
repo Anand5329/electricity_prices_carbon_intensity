@@ -70,7 +70,7 @@ class _MyHomePageState extends State<MyHomePage> {
   late int _counter = 0;
   final _caller = CarbonIntensityCaller();
   late CarbonIntensityChartGenerator _chartGenerator;
-  LineChartData? _chartData = null;
+  LineChartData? _chartData;
 
   void _resetCounter() {
     setState(() {
@@ -166,8 +166,8 @@ class _MyHomePageState extends State<MyHomePage> {
                 padding: const EdgeInsets.only(
                   right: 18,
                   left: 12,
-                  top: 24,
-                  bottom: 12,
+                  top: 0,
+                  bottom: 0,
                 ),
                 child: LineChart(
                   _chartData!
@@ -178,7 +178,7 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _refreshCarbonIntensity,
+        onPressed: _refreshChartData,
         tooltip: 'Refresh Carbon Intensity',
         child: const Icon(Icons.refresh_rounded),
       ), // This trailing comma makes auto-formatting nicer for build methods.
