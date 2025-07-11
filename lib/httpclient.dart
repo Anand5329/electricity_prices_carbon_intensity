@@ -8,7 +8,7 @@ class ApiCaller {
 
   ApiCaller(this.baseUrl);
 
-  Future<Response> getHtttps({
+  Future<Response> _getHttps({
     required String endpoint,
     Map<String, dynamic>? queryParams,
     Map<String, String>? headers,
@@ -32,21 +32,18 @@ class CarbonIntensityCaller extends ApiCaller {
     "yyyy-MM-dd'T'HH:mm'Z'",
   );
 
-  static int convertToInt(IntensityData intensity) {
-    return intensity.actual != null
-        ? intensity.actual!
-        : intensity.forecast != null
-        ? intensity.forecast!
-        : -1;
+  static int convertToInt(PeriodData period) {
+    final intensity = period.intensity;
+    return intensity.actual ?? intensity.forecast ?? -1;
   }
 
-  Future<IntensityData> getCurrentIntensity() async {
+  Future<PeriodData> getCurrentIntensity() async {
     final response = await _get('$_intensity/');
     if (!isValidResponse(response)) {
       throw Exception("No intensity found");
     }
 
-    final List<IntensityData> data = await _parseIntensity(response);
+    final List<PeriodData> data = await _parseIntensityAndTime(response);
     if (data.isEmpty) {
       throw Exception("No intensity found");
     }
