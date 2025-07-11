@@ -160,6 +160,7 @@ class _MyHomePageState extends State<MyHomePage> {
           children: <Widget>[
             // BigCounter(counter: _counter),
             BigAnimatedCounter(count: _counter),
+            SizedBox(height: 40),
             _chartGenerator == null? SizedBox() :
             AspectRatio(
               aspectRatio: 1.70,
