@@ -69,8 +69,8 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   late int _counter = 0;
   final _caller = CarbonIntensityCaller();
-  late CarbonIntensityChartGenerator _chartGenerator;
-  LineChartData? _chartData;
+  late CarbonIntensityChartGeneratorFactory _chartGeneratorFactory;
+  LineChartData Function()? _chartGenerator;
 
   void _resetCounter() {
     setState(() {
@@ -106,16 +106,16 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Future<void> _refreshChartData() async {
-    final chartData = await _chartGenerator.generateChart();
+    final generateFn = await _chartGeneratorFactory.getChartGenerator();
     setState(() {
-      _chartData = chartData;
+      _chartGenerator = generateFn;
     });
   }
 
   @override
   void initState() {
     super.initState();
-    _chartGenerator = CarbonIntensityChartGenerator(_caller);
+    _chartGeneratorFactory = CarbonIntensityChartGeneratorFactory(_caller, setState);
     _refreshCarbonIntensity();
     _refreshChartData();
   }
@@ -128,7 +128,7 @@ class _MyHomePageState extends State<MyHomePage> {
     // The Flutter framework has been optimized to make rerunning build methods
     // fast, so that you can just rebuild anything that needs updating rather
     // than having to individually change instances of widgets.
-    _chartGenerator.backgroundColor = Theme.of(context).colorScheme.surface;
+    _chartGeneratorFactory.backgroundColor = Theme.of(context).colorScheme.surface;
     return Scaffold(
       appBar: AppBar(
         // TRY THIS: Try changing the color here to a specific color (to
@@ -160,7 +160,7 @@ class _MyHomePageState extends State<MyHomePage> {
           children: <Widget>[
             // BigCounter(counter: _counter),
             BigAnimatedCounter(count: _counter),
-            _chartData == null? SizedBox() :
+            _chartGenerator == null? SizedBox() :
             AspectRatio(
               aspectRatio: 1.70,
               child: Padding(
@@ -171,7 +171,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   bottom: 0,
                 ),
                 child: LineChart(
-                  _chartData!
+                  _chartGenerator!()
                 ),
               ),
             )

@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:electricity_prices_and_carbon_intensity/httpclient.dart';
 import 'package:fl_chart/fl_chart.dart';
+// import 'package:fl_chart/src/utils/lerp.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -9,13 +10,16 @@ import 'package:logger/logger.dart';
 
 var logger = Logger(filter: null, printer: PrettyPrinter(), output: null);
 
-class CarbonIntensityChartGenerator {
+class CarbonIntensityChartGeneratorFactory {
   final CarbonIntensityCaller caller;
+  final void Function(VoidCallback) setStateFn;
+  bool handleBuiltInTouches = false;
+
   late Color backgroundColor;
 
-  CarbonIntensityChartGenerator(this.caller);
+  CarbonIntensityChartGeneratorFactory(this.caller, this.setStateFn);
 
-  Future<LineChartData> generateChart({Color bgColor = Colors.white}) async {
+  Future<LineChartData Function()> getChartGenerator() async {
     DateTime today = DateTime.now();
     List<PeriodData> past = await this.caller.getIntensityFrom(
       from: today,
@@ -31,9 +35,68 @@ class CarbonIntensityChartGenerator {
     all.addAll(future);
 
     List<FlSpot> spots = _convertToChartData(all);
-    LineChartData chart = _getChartData(spots, currentIntensityIndex);
 
-    return chart;
+    return () => _getChartData(spots, currentIntensityIndex);
+  }
+
+  LineChartData _getChartData(
+      List<FlSpot> data,
+      int currentIntensityIndex
+      ) {
+    double? minT, maxT, minI, maxI;
+    if (data.isNotEmpty) {
+      [minT, maxT] = _getMinMaxForTime(data);
+      [minI, maxI] = _getMinMaxForCI(data);
+    }
+    final lineChartBar = _getLineChartBarData(data, currentIntensityIndex, minI, maxI);
+    final touchData = _getTouchData();
+    return LineChartData(
+      lineBarsData: [lineChartBar],
+      maxX: maxT,
+      minX: minT,
+      maxY: maxI,
+      minY: minI,
+      titlesData: _getTitlesData(),
+      borderData: FlBorderData(show: false),
+      lineTouchData: touchData,
+      gridData: gridData,
+      backgroundColor: backgroundColor,
+      showingTooltipIndicators: [
+        ShowingTooltipIndicators([
+          LineBarSpot(
+            lineChartBar,
+            0,
+            lineChartBar.spots[currentIntensityIndex],
+          ),
+        ]),
+      ],
+    );
+  }
+
+  LineTouchData _getTouchData() {
+    return LineTouchData(
+      enabled: true,
+      handleBuiltInTouches: this.handleBuiltInTouches,
+      getTouchedSpotIndicator: _getTouchedIndicator,
+      touchCallback: (FlTouchEvent event, LineTouchResponse? response) {
+        if (response == null || response.lineBarSpots == null) {
+          return;
+        }
+        if (event is FlPointerEnterEvent || event is FlPointerHoverEvent) {
+          setStateFn(() {
+            this.handleBuiltInTouches = true;
+          });
+        } else if (event is FlPointerExitEvent) {
+          setStateFn(() {
+            this.handleBuiltInTouches = false;
+          });
+        }
+      },
+      touchTooltipData: LineTouchTooltipData(
+        getTooltipColor: (touchedSpot) => defaultTouchColor,
+        getTooltipItems: _intensityAndTimeTooltipItems,
+      ),
+    );
   }
 
   static List<double> _getMinMaxForTime(List<FlSpot> dots) {
@@ -79,39 +142,6 @@ class CarbonIntensityChartGenerator {
 
   static List<FlSpot> _convertToChartData(List<PeriodData> periods) {
     return periods.map(_convertPeriodToSpot).toList();
-  }
-
-  LineChartData _getChartData(
-    List<FlSpot> data,
-    int currentIntensityIndex
-  ) {
-    double? minT, maxT, minI, maxI;
-    if (data.isNotEmpty) {
-      [minT, maxT] = _getMinMaxForTime(data);
-      [minI, maxI] = _getMinMaxForCI(data);
-    }
-    final lineChartBar = _getLineChartBarData(data, currentIntensityIndex, minI, maxI);
-    return LineChartData(
-      lineBarsData: [lineChartBar],
-      maxX: maxT,
-      minX: minT,
-      maxY: maxI,
-      minY: minI,
-      titlesData: _getTitlesData(),
-      borderData: FlBorderData(show: false),
-      lineTouchData: ciTouchData,
-      gridData: gridData,
-      backgroundColor: backgroundColor,
-      showingTooltipIndicators: [
-        ShowingTooltipIndicators([
-          LineBarSpot(
-            lineChartBar,
-            0,
-            lineChartBar.spots[currentIntensityIndex],
-          ),
-        ]),
-      ],
-    );
   }
 
   static LineChartBarData _getLineChartBarData(
@@ -207,6 +237,7 @@ class CarbonIntensityChartGenerator {
   static const Color defaultTouchColor = Colors.black;
   static LineTouchData ciTouchData = LineTouchData(
     enabled: true,
+    handleBuiltInTouches: false,
     getTouchedSpotIndicator: _getTouchedIndicator,
     touchTooltipData: LineTouchTooltipData(
       getTooltipColor: (touchedSpot) => defaultTouchColor,
@@ -223,7 +254,7 @@ class CarbonIntensityChartGenerator {
           color: color,
         ),
         FlDotData(
-          getDotPainter: (spot, percent, barData, dotIndex) =>
+          getDotPainter: (spot, xPercent, barData, dotIndex) =>
              FlDotCirclePainter(
                color: color ?? defaultTouchColor
              )
@@ -247,6 +278,8 @@ class CarbonIntensityChartGenerator {
 
   // TODO: fix this to be in line with the gradient paints used by fl_chart
   static Color? lerp(Gradient gradient, double t) {
+
+    // return lerpGradient(gradient.colors, gradient.stops!, t);// this is used in fl_chart to render.
     final colors = gradient.colors;
     final stops = gradient.stops!;
     for (var s = 0; s < stops.length - 1; s++) {
