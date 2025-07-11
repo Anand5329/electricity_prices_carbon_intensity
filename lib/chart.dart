@@ -269,7 +269,7 @@ class CarbonIntensityChartGeneratorFactory {
     return spots
         .map(
           (spot) => LineTooltipItem(
-            "${spot.y}\n${DateFormat.Hm().format(DateTime.fromMillisecondsSinceEpoch(spot.x.round()))}",
+            "${spot.y}\n${_toReadableTimeStamp(spot.x)}",
             TextStyle(color: lerp(specificGradient, spot.y / maxPossibleIntensity)),
           ),
         )
@@ -304,7 +304,7 @@ class CarbonIntensityChartGeneratorFactory {
         axisNameWidget: Text("Time"),
         sideTitles: SideTitles(
           showTitles: true,
-          reservedSize: 30,
+          reservedSize: 70,
           interval: timeInterval,
           getTitlesWidget: _bottomTitleWidgets,
           minIncluded: false,
@@ -327,7 +327,8 @@ class CarbonIntensityChartGeneratorFactory {
 
   static const String UNIT = "gCO2/kWh";
   static const textStyle = TextStyle(fontSize: 15, fontWeight: FontWeight.bold);
-  static const double timeInterval = 5 * 60 * 60 * 1000;
+  static const int intervalHours = 5;
+  static const double timeInterval = intervalHours * 60 * 60 * 1000;
   static const double intensityInterval = 25;
 
   static Widget _leftTitleWidgets(double value, TitleMeta meta) {
@@ -339,12 +340,20 @@ class CarbonIntensityChartGeneratorFactory {
   }
 
   static Widget _bottomTitleWidgets(double timestamp, TitleMeta meta) {
-    final datetime = DateTime.fromMillisecondsSinceEpoch(timestamp.round());
     return Text(
-      DateFormat.Hm().format(datetime),
+      _toReadableTimeStamp(timestamp, includeDateAtMidnight: true),
       style: textStyle,
-      textAlign: TextAlign.end,
+      textAlign: TextAlign.center,
     );
+  }
+
+  static String _toReadableTimeStamp(double timestamp, {bool includeDateAtMidnight = false}) {
+    final datetime = DateTime.fromMillisecondsSinceEpoch(timestamp.round());
+    String date = "";
+    if (includeDateAtMidnight && datetime.hour < intervalHours && datetime.minute == 0) {
+      date = "\n${DateFormat.yMMMd().format(datetime)}";
+    }
+    return DateFormat.Hm().format(datetime) + date;
   }
 
   static FlLine _getGridLine(value) {
