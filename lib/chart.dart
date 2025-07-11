@@ -7,27 +7,31 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
 
-var logger = Logger(
-  filter: null,
-  printer: PrettyPrinter(),
-  output: null,
-);
+var logger = Logger(filter: null, printer: PrettyPrinter(), output: null);
 
 class CarbonIntensityChartGenerator {
   final CarbonIntensityCaller caller;
+  late Color backgroundColor;
 
   CarbonIntensityChartGenerator(this.caller);
 
   Future<LineChartData> generateChart({Color bgColor = Colors.white}) async {
     DateTime today = DateTime.now();
-    List<PeriodData> past = await this.caller.getIntensityFrom(from: today, modifier: FromModifier.past24);
-    List<PeriodData> future = await this.caller.getIntensityFrom(from: today, modifier: FromModifier.forward24);
+    List<PeriodData> past = await this.caller.getIntensityFrom(
+      from: today,
+      modifier: FromModifier.past24,
+    );
+    List<PeriodData> future = await this.caller.getIntensityFrom(
+      from: today,
+      modifier: FromModifier.forward24,
+    );
+    int currentIntensityIndex = _getCurrentIntensityIndex(past);
 
     List<PeriodData> all = List.from(past);
     all.addAll(future);
 
-    List<FlSpot> spots = convertToChartData(all);
-    LineChartData chart = getChartData(spots, bgColor);
+    List<FlSpot> spots = _convertToChartData(all);
+    LineChartData chart = _getChartData(spots, currentIntensityIndex);
 
     return chart;
   }
@@ -52,47 +56,127 @@ class CarbonIntensityChartGenerator {
     return [min, max];
   }
 
+  static int _getCurrentIntensityIndex(List<PeriodData> past) {
+    for (var i = past.length - 1; i >= 0; i--) {
+      // return the latest valid actual point of data
+      if (past[i].intensity.actual != null) {
+        return i;
+      }
+    }
+    return 0;
+  }
+
   static FlSpot _convertPeriodToSpot(PeriodData period) {
-    final double y = CarbonIntensityCaller.convertToInt(period.intensity) + 0.0;
+    final double y = CarbonIntensityCaller.convertToInt(period) + 0.0;
     final DateTime from = DateTime.parse(period.from);
     final DateTime to = DateTime.parse(period.to);
-    final double x = (from.toLocal().millisecondsSinceEpoch + to.toLocal().millisecondsSinceEpoch) / 2;
+    final double x =
+        (from.toLocal().millisecondsSinceEpoch +
+            to.toLocal().millisecondsSinceEpoch) /
+        2;
     return FlSpot(x, y);
   }
 
-  static List<FlSpot> convertToChartData(List<PeriodData> periods) {
-    return List.from(periods.map(_convertPeriodToSpot));
+  static List<FlSpot> _convertToChartData(List<PeriodData> periods) {
+    return periods.map(_convertPeriodToSpot).toList();
   }
 
-  static LineChartData getChartData(List<FlSpot> data, Color? backgroundColor) {
+  LineChartData _getChartData(
+    List<FlSpot> data,
+    int currentIntensityIndex
+  ) {
     double? minT, maxT, minI, maxI;
     if (data.isNotEmpty) {
       [minT, maxT] = _getMinMaxForTime(data);
       [minI, maxI] = _getMinMaxForCI(data);
     }
+    final lineChartBar = _getLineChartBarData(data, currentIntensityIndex, minI, maxI);
     return LineChartData(
-      lineBarsData: [getLineChartBarData(data)],
+      lineBarsData: [lineChartBar],
       maxX: maxT,
       minX: minT,
       maxY: maxI,
       minY: minI,
-      titlesData: getTitlesData(),
-      lineTouchData: const LineTouchData(enabled: true),
+      titlesData: _getTitlesData(),
+      borderData: FlBorderData(show: false),
+      lineTouchData: ciTouchData,
       gridData: gridData,
-      backgroundColor: backgroundColor
+      backgroundColor: backgroundColor,
+      showingTooltipIndicators: [
+        ShowingTooltipIndicators([
+          LineBarSpot(
+            lineChartBar,
+            0,
+            lineChartBar.spots[currentIntensityIndex],
+          ),
+        ]),
+      ],
     );
   }
 
-  static LineChartBarData getLineChartBarData(List<FlSpot> data) {
+  static LineChartBarData _getLineChartBarData(
+    List<FlSpot> data,
+    int currentSpotIndex,
+    double? minIntensity,
+    double? maxIntensity,
+  ) {
+    _constrainGradientToSpecific(minIntensity, maxIntensity);
+
     return LineChartBarData(
-      showingIndicators: [],
+      showingIndicators: [currentSpotIndex],
       spots: data,
       isCurved: true,
       barWidth: 4,
-      belowBarData: null,
+      belowBarData: BarAreaData(
+        show: true,
+        gradient: specificGradient.withOpacity(0.5),
+      ),
       dotData: const FlDotData(show: false),
-      gradient: ciGradient,
+      gradient: specificGradient,
     );
+  }
+
+  static void _constrainGradientToSpecific(double? minIntensity, double? maxIntensity) {
+    double minStop = minIntensity! / maxPossibleIntensity;
+    double maxStop = maxIntensity! / maxPossibleIntensity;
+    List<Color> colors = List.from(ciGradient.colors);
+    List<double> stops = List.from(ciGradient.stops!);
+    Color? minColor = lerp(ciGradient, minStop);
+    Color? maxColor = lerp(ciGradient, maxStop);
+    int i, j;
+    for (i = 0; i < stops.length; i++) {
+      if (stops[i] > minStop) {
+        i--;
+        break;
+      }
+    }
+    for (j = stops.length - 1; j >= 0; j--) {
+      if (stops[j] < maxStop) {
+        j = stops.length - j - 2;
+        break;
+      }
+    }
+
+    while (i >= 0) {
+      stops.removeAt(i);
+      colors.removeAt(i);
+      i--;
+    }
+    while (j >= 0) {
+      stops.removeLast();
+      colors.removeLast();
+      j--;
+    }
+
+    colors.insert(0, minColor ?? defaultTouchColor);
+    stops.insert(0, minStop);
+    colors.add(maxColor ?? defaultTouchColor);
+    stops.add(maxStop);
+
+    // logger.d(colors);
+    // logger.d(stops);
+
+    specificGradient = LinearGradient(begin: Alignment.bottomCenter, end: Alignment.topCenter, colors: colors, stops: stops);
   }
 
   // Carbon intensity by source:
@@ -101,26 +185,95 @@ class CarbonIntensityChartGenerator {
   // Solar PV: ~48 gCO₂e/kWh
   // Wind: ~11 gCO₂e/kWh
   // Nuclear: ~12 gCO₂e/kWh
-  static const List<double> ciStops = [0.2, 0.4, 0.6, 1];// [100, 200, 300, 500] / 500
-  static const List<Color> ciColors = [Colors.green, Colors.yellow, Colors.red, Colors.black];
-  static const Gradient ciGradient = LinearGradient(begin: Alignment.bottomCenter, end: Alignment.topCenter, colors: ciColors, stops: ciStops);
+  static const double maxPossibleIntensity = 500;
+  static const List<double> intensityStops = [0, 100, 200, 300, 500];
+  static final List<double> fractionStops = intensityStops
+      .map((x) => x / maxPossibleIntensity)
+      .toList();
+  static const List<Color> ciColors = [
+    Colors.blue,
+    Colors.green,
+    Colors.yellow,
+    Colors.red,
+    Colors.black,
+  ];
+  static final LinearGradient ciGradient = LinearGradient(
+    begin: Alignment.bottomCenter,
+    end: Alignment.topCenter,
+    colors: ciColors,
+    stops: fractionStops,
+  );
+  static LinearGradient specificGradient = ciGradient;
+  static const Color defaultTouchColor = Colors.black;
+  static LineTouchData ciTouchData = LineTouchData(
+    enabled: true,
+    getTouchedSpotIndicator: _getTouchedIndicator,
+    touchTooltipData: LineTouchTooltipData(
+      getTooltipColor: (touchedSpot) => defaultTouchColor,
+      getTooltipItems: _intensityAndTimeTooltipItems,
+    ),
+  );
 
-  static FlTitlesData getTitlesData() {
+  static List<TouchedSpotIndicatorData?> _getTouchedIndicator(LineChartBarData bar, List<int> indices) {
+    return indices.map((index) {
+      final spot = bar.spots[index];
+      final color = lerp(specificGradient, spot.y / maxPossibleIntensity);
+      return TouchedSpotIndicatorData(
+        FlLine(
+          color: color,
+        ),
+        FlDotData(
+          getDotPainter: (spot, percent, barData, dotIndex) =>
+             FlDotCirclePainter(
+               color: color ?? defaultTouchColor
+             )
+          )
+      );
+    }).toList();
+  }
+
+  static List<LineTooltipItem?> _intensityAndTimeTooltipItems(
+    List<LineBarSpot> spots,
+  ) {
+    return spots
+        .map(
+          (spot) => LineTooltipItem(
+            "${spot.y}\n${DateFormat.Hm().format(DateTime.fromMillisecondsSinceEpoch(spot.x.round()))}",
+            TextStyle(color: lerp(specificGradient, spot.y / maxPossibleIntensity)),
+          ),
+        )
+        .toList();
+  }
+
+  // TODO: fix this to be in line with the gradient paints used by fl_chart
+  static Color? lerp(Gradient gradient, double t) {
+    final colors = gradient.colors;
+    final stops = gradient.stops!;
+    for (var s = 0; s < stops.length - 1; s++) {
+      final leftStop = stops[s], rightStop = stops[s + 1];
+      final leftColor = colors[s], rightColor = colors[s + 1];
+      if (t <= leftStop) {
+        return leftColor;
+      } else if (t < rightStop) {
+        final sectionT = (t - leftStop) / (rightStop - leftStop);
+        return Color.lerp(leftColor, rightColor, sectionT);
+      }
+    }
+    return colors.last;
+  }
+
+  static FlTitlesData _getTitlesData() {
     return FlTitlesData(
       show: true,
-      rightTitles: const AxisTitles(
-        sideTitles: SideTitles(showTitles: false),
-      ),
-      topTitles: const AxisTitles(
-        sideTitles: SideTitles(showTitles: false),
-      ),
+      rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+      topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
       bottomTitles: const AxisTitles(
         axisNameWidget: Text("Time"),
         sideTitles: SideTitles(
           showTitles: true,
           reservedSize: 30,
           interval: timeInterval,
-          getTitlesWidget: bottomTitleWidgets,
+          getTitlesWidget: _bottomTitleWidgets,
           minIncluded: false,
           maxIncluded: false,
         ),
@@ -130,7 +283,7 @@ class CarbonIntensityChartGenerator {
         sideTitles: SideTitles(
           showTitles: true,
           interval: intensityInterval,
-          getTitlesWidget: leftTitleWidgets,
+          getTitlesWidget: _leftTitleWidgets,
           reservedSize: 70,
           minIncluded: false,
           maxIncluded: false,
@@ -144,27 +297,30 @@ class CarbonIntensityChartGenerator {
   static const double timeInterval = 5 * 60 * 60 * 1000;
   static const double intensityInterval = 25;
 
-  static Widget leftTitleWidgets(double value, TitleMeta meta) {
-    return Text(value.round().toString(), style: textStyle, textAlign: TextAlign.center);
-  }
-
-  static Widget bottomTitleWidgets(double timestamp, TitleMeta meta) {
-    final datetime = DateTime.fromMillisecondsSinceEpoch(timestamp.round());
-    return Text(DateFormat.Hm().format(datetime), style: textStyle, textAlign: TextAlign.end);
-  }
-
-  static FlLine getGridLine(value) {
-    return const FlLine(
-      color: Colors.orange,
-      strokeWidth: 1,
+  static Widget _leftTitleWidgets(double value, TitleMeta meta) {
+    return Text(
+      value.round().toString(),
+      style: textStyle,
+      textAlign: TextAlign.center,
     );
+  }
+
+  static Widget _bottomTitleWidgets(double timestamp, TitleMeta meta) {
+    final datetime = DateTime.fromMillisecondsSinceEpoch(timestamp.round());
+    return Text(
+      DateFormat.Hm().format(datetime),
+      style: textStyle,
+      textAlign: TextAlign.end,
+    );
+  }
+
+  static FlLine _getGridLine(value) {
+    return const FlLine(color: Colors.orange, strokeWidth: 1);
   }
 
   static const gridData = FlGridData(
     show: true,
     drawVerticalLine: false,
-    drawHorizontalLine: true,
-    getDrawingHorizontalLine: getGridLine,
+    drawHorizontalLine: false,
   );
-
 }
