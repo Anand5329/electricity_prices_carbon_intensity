@@ -216,7 +216,7 @@ class CarbonIntensityChartGeneratorFactory {
     maxI = maxIntensity;
 
     //normalise stops
-    // stops = stops.map((stop) => (stop - minStop) / (maxStop - minStop)).toList();
+    stops = stops.map((stop) => (stop - minStop) / (maxStop - minStop)).toList();
 
     // logger.d(colors);
     // logger.d(stops);
