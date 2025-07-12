@@ -163,7 +163,7 @@ class _MyHomePageState extends State<MyHomePage> {
             SizedBox(height: 40),
             _chartGenerator == null? SizedBox() :
             AspectRatio(
-              aspectRatio: 1.70,
+              aspectRatio: 1.20,
               child: Padding(
                 padding: const EdgeInsets.only(
                   right: 18,

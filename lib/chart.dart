@@ -368,9 +368,10 @@ class CarbonIntensityChartGeneratorFactory {
     );
   }
 
+  // TODO: make styling reactive for mobile devices and larger screens
   static const String UNIT = "gCO2/kWh";
   static const textStyle = TextStyle(fontSize: 15, fontWeight: FontWeight.bold);
-  static const int intervalHours = 5;
+  static const int intervalHours = 12;
   static const double timeInterval = intervalHours * 60 * 60 * 1000;
   static const double intensityInterval = 25;
 
