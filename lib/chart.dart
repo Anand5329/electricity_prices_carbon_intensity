@@ -40,16 +40,18 @@ class CarbonIntensityChartGeneratorFactory {
     return () => _getChartData(spots, currentIntensityIndex);
   }
 
-  LineChartData _getChartData(
-      List<FlSpot> data,
-      int currentIntensityIndex
-      ) {
+  LineChartData _getChartData(List<FlSpot> data, int currentIntensityIndex) {
     double? minT, maxT, minI, maxI;
     if (data.isNotEmpty) {
       [minT, maxT] = _getMinMaxForTime(data);
       [minI, maxI] = _getMinMaxForCI(data);
     }
-    final lineChartBar = _getLineChartBarData(data, currentIntensityIndex, minI, maxI);
+    final lineChartBar = _getLineChartBarData(
+      data,
+      currentIntensityIndex,
+      minI,
+      maxI,
+    );
     final touchData = _getTouchData();
     return LineChartData(
       lineBarsData: [lineChartBar],
@@ -85,14 +87,24 @@ class CarbonIntensityChartGeneratorFactory {
         }
         double y = response.lineBarSpots!.first.y;
 
-        if (event is FlPointerEnterEvent || event is FlPointerHoverEvent) {
+        if (event is FlPointerEnterEvent ||
+            event is FlPointerHoverEvent ||
+            event is FlTapDownEvent) {
           setStateFn(() {
             this.handleBuiltInTouches = true;
           });
-        } else if (event is FlPointerExitEvent) {
+        } else if (event is FlPointerExitEvent ||
+            event is FlTapUpEvent ||
+            event is FlTapCancelEvent ||
+            event is FlPanEndEvent ||
+            event is FlPanCancelEvent ||
+            event is FlLongPressEnd) {
+          // TODO: fix: FlPanUpdate event detected when should FlPanEndEvent. Not resetting to False.
           setStateFn(() {
             this.handleBuiltInTouches = false;
           });
+        } else {
+          // logger.d(event);
         }
       },
       touchTooltipData: LineTouchTooltipData(
@@ -169,7 +181,10 @@ class CarbonIntensityChartGeneratorFactory {
     );
   }
 
-  static void _constrainGradientToSpecific(double? minIntensity, double? maxIntensity) {
+  static void _constrainGradientToSpecific(
+    double? minIntensity,
+    double? maxIntensity,
+  ) {
     double minStop = minIntensity! / maxPossibleIntensity;
     double maxStop = maxIntensity! / maxPossibleIntensity;
     List<Color> colors = List.from(ciGradient.colors);
@@ -211,17 +226,24 @@ class CarbonIntensityChartGeneratorFactory {
     // stops.insert(i + 1, minStop);
     // colors.insert(j + 1, maxColor ?? defaultTouchColor);
     // stops.insert(j + 1, maxStop);
-    
+
     minI = minIntensity;
     maxI = maxIntensity;
 
     //normalise stops
-    stops = stops.map((stop) => (stop - minStop) / (maxStop - minStop)).toList();
+    stops = stops
+        .map((stop) => (stop - minStop) / (maxStop - minStop))
+        .toList();
 
     // logger.d(colors);
     // logger.d(stops);
 
-    specificGradient = LinearGradient(begin: Alignment.bottomCenter, end: Alignment.topCenter, colors: colors, stops: stops);
+    specificGradient = LinearGradient(
+      begin: Alignment.bottomCenter,
+      end: Alignment.topCenter,
+      colors: colors,
+      stops: stops,
+    );
     // specificGradient = ciGradient;
   }
 
@@ -263,20 +285,19 @@ class CarbonIntensityChartGeneratorFactory {
     ),
   );
 
-  static List<TouchedSpotIndicatorData?> _getTouchedIndicator(LineChartBarData bar, List<int> indices) {
+  static List<TouchedSpotIndicatorData?> _getTouchedIndicator(
+    LineChartBarData bar,
+    List<int> indices,
+  ) {
     return indices.map((index) {
       final spot = bar.spots[index];
       final color = _getColorForY(spot.y);
       return TouchedSpotIndicatorData(
-        FlLine(
-          color: color,
-        ),
+        FlLine(color: color),
         FlDotData(
           getDotPainter: (spot, xPercent, barData, dotIndex) =>
-             FlDotCirclePainter(
-               color: color ?? defaultTouchColor
-             )
-          )
+              FlDotCirclePainter(color: color ?? defaultTouchColor),
+        ),
       );
     }).toList();
   }
@@ -296,11 +317,11 @@ class CarbonIntensityChartGeneratorFactory {
 
   // normalize Y as it would inside the gradient paint
   // just dividing by maxPossibleIntensity does not work, have to use L1 norm
-  static Color? _getColorForY(double y) => lerp(specificGradient, (y - minI) / (maxI - minI));
+  static Color? _getColorForY(double y) =>
+      lerp(specificGradient, (y - minI) / (maxI - minI));
 
   // TODO: fix this to be in line with the gradient paints used by fl_chart
   static Color? lerp(Gradient gradient, double t) {
-
     // return lerpGradient(gradient.colors, gradient.stops!, t);// this is used in fl_chart to render.
     final colors = gradient.colors;
     final stops = gradient.stops!;
@@ -369,10 +390,15 @@ class CarbonIntensityChartGeneratorFactory {
     );
   }
 
-  static String _toReadableTimeStamp(double timestamp, {bool includeDateAtMidnight = false}) {
+  static String _toReadableTimeStamp(
+    double timestamp, {
+    bool includeDateAtMidnight = false,
+  }) {
     final datetime = DateTime.fromMillisecondsSinceEpoch(timestamp.round());
     String date = "";
-    if (includeDateAtMidnight && datetime.hour < intervalHours && datetime.minute == 0) {
+    if (includeDateAtMidnight &&
+        datetime.hour < intervalHours &&
+        datetime.minute == 0) {
       date = "\n${DateFormat.yMMMd().format(datetime)}";
     }
     return DateFormat.Hm().format(datetime) + date;
