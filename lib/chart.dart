@@ -5,6 +5,7 @@ import 'package:fl_chart/fl_chart.dart';
 // import 'package:fl_chart/src/utils/lerp.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
 
@@ -82,6 +83,8 @@ class CarbonIntensityChartGeneratorFactory {
         if (response == null || response.lineBarSpots == null) {
           return;
         }
+        double y = response.lineBarSpots!.first.y;
+
         if (event is FlPointerEnterEvent || event is FlPointerHoverEvent) {
           setStateFn(() {
             this.handleBuiltInTouches = true;
@@ -192,6 +195,7 @@ class CarbonIntensityChartGeneratorFactory {
       colors.removeAt(i);
       i--;
     }
+
     while (j >= 0) {
       stops.removeLast();
       colors.removeLast();
@@ -203,10 +207,22 @@ class CarbonIntensityChartGeneratorFactory {
     colors.add(maxColor ?? defaultTouchColor);
     stops.add(maxStop);
 
+    // colors.insert(i + 1, minColor ?? defaultTouchColor);
+    // stops.insert(i + 1, minStop);
+    // colors.insert(j + 1, maxColor ?? defaultTouchColor);
+    // stops.insert(j + 1, maxStop);
+    
+    minI = minIntensity;
+    maxI = maxIntensity;
+
+    //normalise stops
+    // stops = stops.map((stop) => (stop - minStop) / (maxStop - minStop)).toList();
+
     // logger.d(colors);
     // logger.d(stops);
 
     specificGradient = LinearGradient(begin: Alignment.bottomCenter, end: Alignment.topCenter, colors: colors, stops: stops);
+    // specificGradient = ciGradient;
   }
 
   // Carbon intensity by source:
@@ -215,6 +231,8 @@ class CarbonIntensityChartGeneratorFactory {
   // Solar PV: ~48 gCO₂e/kWh
   // Wind: ~11 gCO₂e/kWh
   // Nuclear: ~12 gCO₂e/kWh
+  static double minI = 0;
+  static double maxI = 500;
   static const double maxPossibleIntensity = 500;
   static const List<double> intensityStops = [0, 100, 200, 300, 500];
   static final List<double> fractionStops = intensityStops
@@ -248,7 +266,7 @@ class CarbonIntensityChartGeneratorFactory {
   static List<TouchedSpotIndicatorData?> _getTouchedIndicator(LineChartBarData bar, List<int> indices) {
     return indices.map((index) {
       final spot = bar.spots[index];
-      final color = lerp(specificGradient, spot.y / maxPossibleIntensity);
+      final color = _getColorForY(spot.y);
       return TouchedSpotIndicatorData(
         FlLine(
           color: color,
@@ -270,11 +288,15 @@ class CarbonIntensityChartGeneratorFactory {
         .map(
           (spot) => LineTooltipItem(
             "${spot.y}\n${_toReadableTimeStamp(spot.x)}",
-            TextStyle(color: lerp(specificGradient, spot.y / maxPossibleIntensity)),
+            TextStyle(color: _getColorForY(spot.y)),
           ),
         )
         .toList();
   }
+
+  // normalize Y as it would inside the gradient paint
+  // just dividing by maxPossibleIntensity does not work, have to use L1 norm
+  static Color? _getColorForY(double y) => lerp(specificGradient, (y - minI) / (maxI - minI));
 
   // TODO: fix this to be in line with the gradient paints used by fl_chart
   static Color? lerp(Gradient gradient, double t) {
