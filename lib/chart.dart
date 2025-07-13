@@ -1,11 +1,6 @@
-import 'dart:ui';
-
 import 'package:electricity_prices_and_carbon_intensity/httpclient.dart';
 import 'package:fl_chart/fl_chart.dart';
-// import 'package:fl_chart/src/utils/lerp.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
 
@@ -20,7 +15,8 @@ class CarbonIntensityChartGeneratorFactory {
 
   CarbonIntensityChartGeneratorFactory(this.caller, this.setStateFn);
 
-  Future<LineChartData Function(BuildContext, DeviceSize)> getChartGenerator() async {
+  Future<LineChartData Function(BuildContext, DeviceSize)>
+  getChartGenerator() async {
     DateTime today = DateTime.now();
     List<PeriodData> past = await this.caller.getIntensityFrom(
       from: today,
@@ -37,12 +33,17 @@ class CarbonIntensityChartGeneratorFactory {
 
     List<FlSpot> spots = _convertToChartData(all);
 
-    return (BuildContext context, DeviceSize size)  {
+    return (BuildContext context, DeviceSize size) {
       this.backgroundColor = Theme.of(context).colorScheme.surface;
-      return _getChartData(spots, currentIntensityIndex, size);};
+      return _getChartData(spots, currentIntensityIndex, size);
+    };
   }
 
-  LineChartData _getChartData(List<FlSpot> data, int currentIntensityIndex, DeviceSize size) {
+  LineChartData _getChartData(
+    List<FlSpot> data,
+    int currentIntensityIndex,
+    DeviceSize size,
+  ) {
     double? minT, maxT, minI, maxI;
     if (data.isNotEmpty) {
       [minT, maxT] = _getMinMaxForTime(data);
@@ -101,7 +102,7 @@ class CarbonIntensityChartGeneratorFactory {
             event is FlPanEndEvent ||
             event is FlPanCancelEvent ||
             event is FlLongPressEnd) {
-          // TODO: fix: FlPanUpdate event detected when should FlPanEndEvent. Not resetting to False.
+          // TODO: fix: FlPanUpdate event detected when should be FlPanEndEvent. Not resetting to False.
           setStateFn(() {
             this.handleBuiltInTouches = false;
           });
@@ -223,11 +224,6 @@ class CarbonIntensityChartGeneratorFactory {
     stops.insert(0, minStop);
     colors.add(maxColor ?? defaultTouchColor);
     stops.add(maxStop);
-
-    // colors.insert(i + 1, minColor ?? defaultTouchColor);
-    // stops.insert(i + 1, minStop);
-    // colors.insert(j + 1, maxColor ?? defaultTouchColor);
-    // stops.insert(j + 1, maxStop);
 
     minI = minIntensity;
     maxI = maxIntensity;
@@ -361,7 +357,8 @@ class CarbonIntensityChartGeneratorFactory {
           showTitles: true,
           reservedSize: 50,
           interval: interval,
-          getTitlesWidget: (timestamp, meta) => _bottomTitleWidgets(timestamp, meta, size),
+          getTitlesWidget: (timestamp, meta) =>
+              _bottomTitleWidgets(timestamp, meta, size),
           minIncluded: false,
           maxIncluded: false,
         ),
@@ -396,7 +393,11 @@ class CarbonIntensityChartGeneratorFactory {
     );
   }
 
-  static Widget _bottomTitleWidgets(double timestamp, TitleMeta meta, DeviceSize size) {
+  static Widget _bottomTitleWidgets(
+    double timestamp,
+    TitleMeta meta,
+    DeviceSize size,
+  ) {
     return Text(
       _toReadableTimeStamp(timestamp, includeDateAtMidnight: true, size: size),
       style: textStyle,
@@ -442,7 +443,6 @@ class CarbonIntensityChartGeneratorFactory {
 }
 
 class AdaptiveChartWidgetBuilder {
-
   static const double widthThreshold = 600;
   final LineChartData Function(BuildContext, DeviceSize) _chartGenerator;
 
@@ -460,15 +460,8 @@ class AdaptiveChartWidgetBuilder {
     return AspectRatio(
       aspectRatio: 1.20,
       child: Padding(
-        padding: const EdgeInsets.only(
-          right: 18,
-          left: 5,
-          top: 0,
-          bottom: 0,
-        ),
-        child: LineChart(
-            _chartGenerator(context, DeviceSize.small)
-        ),
+        padding: const EdgeInsets.only(right: 18, left: 5, top: 0, bottom: 0),
+        child: LineChart(_chartGenerator(context, DeviceSize.small)),
       ),
     );
   }
@@ -477,21 +470,11 @@ class AdaptiveChartWidgetBuilder {
     return AspectRatio(
       aspectRatio: 1.70,
       child: Padding(
-        padding: const EdgeInsets.only(
-          right: 18,
-          left: 12,
-          top: 0,
-          bottom: 0,
-        ),
-        child: LineChart(
-            _chartGenerator(context, DeviceSize.large)
-        ),
+        padding: const EdgeInsets.only(right: 18, left: 12, top: 0, bottom: 0),
+        child: LineChart(_chartGenerator(context, DeviceSize.large)),
       ),
     );
   }
 }
 
-enum DeviceSize {
-  small,
-  large
-}
+enum DeviceSize { small, large }
