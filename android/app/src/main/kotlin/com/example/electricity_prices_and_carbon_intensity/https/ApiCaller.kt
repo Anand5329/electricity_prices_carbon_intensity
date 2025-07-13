@@ -8,9 +8,13 @@ import io.ktor.client.request.get
 import io.ktor.client.statement.HttpResponse
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import java.io.Closeable
 
 open class ApiCaller(val baseUrl: String): Closeable {
+
+    val logger: Logger = LoggerFactory.getLogger(ApiCaller.Companion::class.java)
 
     private val client = HttpClient(CIO) {
         install(ContentNegotiation) {
@@ -23,6 +27,7 @@ open class ApiCaller(val baseUrl: String): Closeable {
     }
 
     suspend fun get(endpoint: String): HttpResponse {
+//        logger.debug("get: $endpoint")
         return client.get(baseUrl + endpoint)
     }
 
@@ -31,10 +36,6 @@ open class ApiCaller(val baseUrl: String): Closeable {
     }
 
     override fun close() {
-        client.close()
-    }
-
-    protected fun finalize() {
         client.close()
     }
 
