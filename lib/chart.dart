@@ -20,7 +20,7 @@ class CarbonIntensityChartGeneratorFactory {
 
   CarbonIntensityChartGeneratorFactory(this.caller, this.setStateFn);
 
-  Future<LineChartData Function()> getChartGenerator() async {
+  Future<LineChartData Function(BuildContext, DeviceSize)> getChartGenerator() async {
     DateTime today = DateTime.now();
     List<PeriodData> past = await this.caller.getIntensityFrom(
       from: today,
@@ -37,10 +37,12 @@ class CarbonIntensityChartGeneratorFactory {
 
     List<FlSpot> spots = _convertToChartData(all);
 
-    return () => _getChartData(spots, currentIntensityIndex);
+    return (BuildContext context, DeviceSize size)  {
+      this.backgroundColor = Theme.of(context).colorScheme.surface;
+      return _getChartData(spots, currentIntensityIndex, size);};
   }
 
-  LineChartData _getChartData(List<FlSpot> data, int currentIntensityIndex) {
+  LineChartData _getChartData(List<FlSpot> data, int currentIntensityIndex, DeviceSize size) {
     double? minT, maxT, minI, maxI;
     if (data.isNotEmpty) {
       [minT, maxT] = _getMinMaxForTime(data);
@@ -59,7 +61,7 @@ class CarbonIntensityChartGeneratorFactory {
       minX: minT,
       maxY: maxI,
       minY: minI,
-      titlesData: _getTitlesData(),
+      titlesData: _getTitlesData(size),
       borderData: FlBorderData(show: false),
       lineTouchData: touchData,
       gridData: gridData,
@@ -320,7 +322,6 @@ class CarbonIntensityChartGeneratorFactory {
   static Color? _getColorForY(double y) =>
       lerp(specificGradient, (y - minI) / (maxI - minI));
 
-  // TODO: fix this to be in line with the gradient paints used by fl_chart
   static Color? lerp(Gradient gradient, double t) {
     // return lerpGradient(gradient.colors, gradient.stops!, t);// this is used in fl_chart to render.
     final colors = gradient.colors;
@@ -338,29 +339,41 @@ class CarbonIntensityChartGeneratorFactory {
     return colors.last;
   }
 
-  static FlTitlesData _getTitlesData() {
+  static FlTitlesData _getTitlesData(DeviceSize size) {
+    double interval;
+    switch (size) {
+      case DeviceSize.large:
+        interval = hour * intervalHoursForLargeWidth;
+        break;
+      case DeviceSize.small:
+        interval = hour * intervalHours;
+        break;
+    }
+
     return FlTitlesData(
       show: true,
       rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
       topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-      bottomTitles: const AxisTitles(
+      bottomTitles: AxisTitles(
         axisNameWidget: Text("Time"),
+        axisNameSize: 20,
         sideTitles: SideTitles(
           showTitles: true,
-          reservedSize: 70,
-          interval: timeInterval,
-          getTitlesWidget: _bottomTitleWidgets,
+          reservedSize: 50,
+          interval: interval,
+          getTitlesWidget: (timestamp, meta) => _bottomTitleWidgets(timestamp, meta, size),
           minIncluded: false,
           maxIncluded: false,
         ),
       ),
       leftTitles: const AxisTitles(
         axisNameWidget: Text("Carbon Intensity ($UNIT)"),
+        axisNameSize: 23,
         sideTitles: SideTitles(
           showTitles: true,
           interval: intensityInterval,
           getTitlesWidget: _leftTitleWidgets,
-          reservedSize: 70,
+          reservedSize: 50,
           minIncluded: false,
           maxIncluded: false,
         ),
@@ -368,11 +381,11 @@ class CarbonIntensityChartGeneratorFactory {
     );
   }
 
-  // TODO: make styling reactive for mobile devices and larger screens
   static const String UNIT = "gCO2/kWh";
   static const textStyle = TextStyle(fontSize: 15, fontWeight: FontWeight.bold);
+  static const int intervalHoursForLargeWidth = 5;
   static const int intervalHours = 12;
-  static const double timeInterval = intervalHours * 60 * 60 * 1000;
+  static const double hour = 60 * 60 * 1000;
   static const double intensityInterval = 25;
 
   static Widget _leftTitleWidgets(double value, TitleMeta meta) {
@@ -383,9 +396,9 @@ class CarbonIntensityChartGeneratorFactory {
     );
   }
 
-  static Widget _bottomTitleWidgets(double timestamp, TitleMeta meta) {
+  static Widget _bottomTitleWidgets(double timestamp, TitleMeta meta, DeviceSize size) {
     return Text(
-      _toReadableTimeStamp(timestamp, includeDateAtMidnight: true),
+      _toReadableTimeStamp(timestamp, includeDateAtMidnight: true, size: size),
       style: textStyle,
       textAlign: TextAlign.center,
     );
@@ -394,11 +407,23 @@ class CarbonIntensityChartGeneratorFactory {
   static String _toReadableTimeStamp(
     double timestamp, {
     bool includeDateAtMidnight = false,
+    DeviceSize? size,
   }) {
     final datetime = DateTime.fromMillisecondsSinceEpoch(timestamp.round());
     String date = "";
+    int newDayThreshold;
+    switch (size) {
+      case DeviceSize.small:
+        newDayThreshold = intervalHours;
+        break;
+      case DeviceSize.large:
+        newDayThreshold = intervalHoursForLargeWidth;
+        break;
+      default:
+        newDayThreshold = 0;
+    }
     if (includeDateAtMidnight &&
-        datetime.hour < intervalHours &&
+        datetime.hour < newDayThreshold &&
         datetime.minute == 0) {
       date = "\n${DateFormat.yMMMd().format(datetime)}";
     }
@@ -414,4 +439,59 @@ class CarbonIntensityChartGeneratorFactory {
     drawVerticalLine: false,
     drawHorizontalLine: false,
   );
+}
+
+class AdaptiveChartWidgetBuilder {
+
+  static const double widthThreshold = 600;
+  final LineChartData Function(BuildContext, DeviceSize) _chartGenerator;
+
+  AdaptiveChartWidgetBuilder(this._chartGenerator);
+
+  Widget builder(BuildContext context, BoxConstraints constraints) {
+    if (constraints.maxWidth > widthThreshold) {
+      return _getLargeWidthWidget(context);
+    } else {
+      return _getSmallWidthWidget(context);
+    }
+  }
+
+  Widget _getSmallWidthWidget(BuildContext context) {
+    return AspectRatio(
+      aspectRatio: 1.20,
+      child: Padding(
+        padding: const EdgeInsets.only(
+          right: 18,
+          left: 5,
+          top: 0,
+          bottom: 0,
+        ),
+        child: LineChart(
+            _chartGenerator(context, DeviceSize.small)
+        ),
+      ),
+    );
+  }
+
+  Widget _getLargeWidthWidget(BuildContext context) {
+    return AspectRatio(
+      aspectRatio: 1.70,
+      child: Padding(
+        padding: const EdgeInsets.only(
+          right: 18,
+          left: 12,
+          top: 0,
+          bottom: 0,
+        ),
+        child: LineChart(
+            _chartGenerator(context, DeviceSize.large)
+        ),
+      ),
+    );
+  }
+}
+
+enum DeviceSize {
+  small,
+  large
 }

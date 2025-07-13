@@ -70,7 +70,7 @@ class _MyHomePageState extends State<MyHomePage> {
   late int _counter = 0;
   final _caller = CarbonIntensityCaller();
   late CarbonIntensityChartGeneratorFactory _chartGeneratorFactory;
-  LineChartData Function()? _chartGenerator;
+  AdaptiveChartWidgetBuilder? _adaptiveChartWidgetBuilder;
 
   void _resetCounter() {
     setState(() {
@@ -106,9 +106,9 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Future<void> _refreshChartData() async {
-    final generateFn = await _chartGeneratorFactory.getChartGenerator();
+    final _chartGenerator = await _chartGeneratorFactory.getChartGenerator();
     setState(() {
-      _chartGenerator = generateFn;
+      _adaptiveChartWidgetBuilder = AdaptiveChartWidgetBuilder(_chartGenerator);
     });
   }
 
@@ -128,7 +128,6 @@ class _MyHomePageState extends State<MyHomePage> {
     // The Flutter framework has been optimized to make rerunning build methods
     // fast, so that you can just rebuild anything that needs updating rather
     // than having to individually change instances of widgets.
-    _chartGeneratorFactory.backgroundColor = Theme.of(context).colorScheme.surface;
     return Scaffold(
       appBar: AppBar(
         // TRY THIS: Try changing the color here to a specific color (to
@@ -161,21 +160,8 @@ class _MyHomePageState extends State<MyHomePage> {
             // BigCounter(counter: _counter),
             BigAnimatedCounter(count: _counter),
             SizedBox(height: 40),
-            _chartGenerator == null? SizedBox() :
-            AspectRatio(
-              aspectRatio: 1.20,
-              child: Padding(
-                padding: const EdgeInsets.only(
-                  right: 18,
-                  left: 12,
-                  top: 0,
-                  bottom: 0,
-                ),
-                child: LineChart(
-                  _chartGenerator!()
-                ),
-              ),
-            )
+            _adaptiveChartWidgetBuilder == null? SizedBox() :
+              LayoutBuilder(builder: _adaptiveChartWidgetBuilder!.builder)
           ],
         ),
       ),
