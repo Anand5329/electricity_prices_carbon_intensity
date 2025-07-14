@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:http/http.dart';
 import 'dart:convert';
 import 'package:intl/intl.dart';
@@ -8,12 +9,13 @@ class ApiCaller {
 
   ApiCaller(this.baseUrl);
 
-  Future<Response> _getHttps({
+  @protected
+  Future<Response> getHttps({
     required String endpoint,
     Map<String, dynamic>? queryParams,
     Map<String, String>? headers,
   }) {
-    return this.client.get(Uri.https(baseUrl + endpoint, "", queryParams));
+    return this.client.get(Uri.https(baseUrl, "/$endpoint/", queryParams), headers: headers);
   }
 
   bool isValidResponse(Response response) {
@@ -89,7 +91,7 @@ class CarbonIntensityCaller extends ApiCaller {
     final response = await _get('$_intensity/$fromFormatted/$modifyString');
     return !isValidResponse(response)
         ? []
-        : await _parseIntensityAndTime(response);
+        : _parseIntensityAndTime(response);
   }
 
   Future<Response> _get(String path) async {
@@ -97,12 +99,12 @@ class CarbonIntensityCaller extends ApiCaller {
     return await client.get(url);
   }
 
-  Future<List<IntensityData>> _parseIntensity(Response response) async {
-    final periods = await _parseIntensityAndTime(response);
+  List<IntensityData> _parseIntensity(Response response) {
+    final periods = _parseIntensityAndTime(response);
     return periods.map((p) => p.intensity).toList();
   }
 
-  Future<List<PeriodData>> _parseIntensityAndTime(Response response) async {
+  List<PeriodData> _parseIntensityAndTime(Response response) {
     final json = jsonDecode(response.body);
     final List data = json['data'];
     return data.map((e) => PeriodData.fromJson(e)).toList();
