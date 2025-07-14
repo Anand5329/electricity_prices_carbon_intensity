@@ -6,29 +6,77 @@ import 'package:logger/logger.dart';
 
 var logger = Logger(filter: null, printer: PrettyPrinter(), output: null);
 
-class CarbonIntensityChartGeneratorFactory {
+class CarbonIntensityChartGeneratorFactory
+    extends ChartGeneratorFactory<IntensityData> {
   final CarbonIntensityCaller caller;
-  final void Function(VoidCallback) setStateFn;
-  bool handleBuiltInTouches = false;
 
-  late Color backgroundColor;
+  // Carbon intensity by source:
+  // Coal: ~820 gCO₂e/kWh
+  // Natural Gas: ~490 gCO₂e/kWh
+  // Solar PV: ~48 gCO₂e/kWh
+  // Wind: ~11 gCO₂e/kWh
+  // Nuclear: ~12 gCO₂e/kWh
 
-  CarbonIntensityChartGeneratorFactory(this.caller, this.setStateFn);
+  CarbonIntensityChartGeneratorFactory.all(
+    this.caller,
+    super.setStateFn,
+    super.xAxisName,
+    super.yAxisName,
+    super.intervalHoursForLargeWidth,
+    super.intervalHours,
+    super.hour,
+    super.yInterval,
+    super.maxPossibleY,
+    super.yStops,
+    super.fractionYStops,
+    super.yColors,
+    super.yGradient,
+    super.maxY,
+    super.minY,
+    super.specificGradient, {
+    super.textStyle = const TextStyle(
+      fontSize: 15,
+      fontWeight: FontWeight.bold,
+    ),
+  });
 
+  CarbonIntensityChartGeneratorFactory(
+    CarbonIntensityCaller caller,
+    void Function(VoidCallback) setStateFn,
+  ) : this.all(
+        caller,
+        setStateFn,
+        "Carbon Intensity (gCO2/kWh)",
+        "Time",
+        5,
+        12,
+        60 * 60 * 1000,
+        25,
+        500,
+        ChartGeneratorFactory.defaultStops,
+        ChartGeneratorFactory.defaultFractionStops,
+        ChartGeneratorFactory.defaultColors,
+        ChartGeneratorFactory.defaultGradient,
+        500,
+        0,
+        ChartGeneratorFactory.defaultGradient,
+      );
+
+  @override
   Future<LineChartData Function(BuildContext, DeviceSize)>
   getChartGenerator() async {
     DateTime today = DateTime.now();
-    List<PeriodData> past = await this.caller.getIntensityFrom(
+    List<PeriodData<IntensityData>> past = await this.caller.getIntensityFrom(
       from: today,
       modifier: FromModifier.past24,
     );
-    List<PeriodData> future = await this.caller.getIntensityFrom(
+    List<PeriodData<IntensityData>> future = await this.caller.getIntensityFrom(
       from: today,
       modifier: FromModifier.forward24,
     );
     int currentIntensityIndex = _getCurrentIntensityIndex(past);
 
-    List<PeriodData> all = List.from(past);
+    List<PeriodData<IntensityData>> all = List.from(past);
     all.addAll(future);
 
     List<FlSpot> spots = _convertToChartData(all);
@@ -39,29 +87,119 @@ class CarbonIntensityChartGeneratorFactory {
     };
   }
 
+  static int _getCurrentIntensityIndex(List<PeriodData> past) {
+    for (var i = past.length - 1; i >= 0; i--) {
+      // return the latest valid actual point of data
+      if (past[i].value.actual != null) {
+        return i;
+      }
+    }
+    return 0;
+  }
+
+  @override
+  FlSpot _convertPeriodToSpot(PeriodData<IntensityData> period) {
+    final double y = CarbonIntensityCaller.convertToInt(period) + 0.0;
+    final DateTime from = DateTime.parse(period.from);
+    final DateTime to = DateTime.parse(period.to);
+    final double x =
+        (from.toLocal().millisecondsSinceEpoch +
+            to.toLocal().millisecondsSinceEpoch) /
+        2;
+    return FlSpot(x, y);
+  }
+
+  @override
+  List<FlSpot> _convertToChartData(
+    List<PeriodData<IntensityData>> periods,
+  ) {
+    return periods.map(_convertPeriodToSpot).toList();
+  }
+}
+
+abstract class ChartGeneratorFactory<T> {
+  double minY;
+  double maxY;
+  final double maxPossibleY;
+  final List<double> yStops;
+  final List<double> fractionYStops;
+  final List<Color> yColors;
+  final LinearGradient yGradient;
+  LinearGradient specificGradient;
+
+  static const Color defaultTouchColor = Colors.black;
+  static const List<Color> defaultColors = const [
+    Colors.blue,
+    Colors.green,
+    Colors.yellow,
+    Colors.red,
+    Colors.black,
+  ];
+  static const List<double> defaultStops = [0, 100, 200, 300, 500];
+  static const List<double> defaultFractionStops = [0, 0.2, 0.4, 0.6, 1];
+  static const LinearGradient defaultGradient = LinearGradient(
+    begin: Alignment.bottomCenter,
+    end: Alignment.topCenter,
+    colors: defaultColors,
+    stops: defaultFractionStops,
+  );
+
+  final String xAxisName;
+  final String yAxisName;
+  final TextStyle textStyle;
+  final int intervalHoursForLargeWidth;
+  final int intervalHours;
+  final double hour;
+  final double yInterval;
+
+  final void Function(VoidCallback) setStateFn;
+  bool handleBuiltInTouches = false;
+  late Color backgroundColor;
+
+  ChartGeneratorFactory(
+    this.setStateFn,
+    this.xAxisName,
+    this.yAxisName,
+    this.intervalHoursForLargeWidth,
+    this.intervalHours,
+    this.hour,
+    this.yInterval,
+    this.maxPossibleY,
+    this.yStops,
+    this.fractionYStops,
+    this.yColors,
+    this.yGradient,
+    this.maxY,
+    this.minY,
+    this.specificGradient, {
+    this.textStyle = const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+  });
+
+  Future<LineChartData Function(BuildContext, DeviceSize)> getChartGenerator();
+
   LineChartData _getChartData(
     List<FlSpot> data,
     int currentIntensityIndex,
     DeviceSize size,
   ) {
-    double? minT, maxT, minI, maxI;
+    double? minX, maxX, minY, maxY;
     if (data.isNotEmpty) {
-      [minT, maxT] = _getMinMaxForTime(data);
-      [minI, maxI] = _getMinMaxForCI(data);
+      [minX, maxX] = _getMinMaxForX(data);
+      [minY, maxY] = _getMinMaxForY(data);
     }
     final lineChartBar = _getLineChartBarData(
       data,
       currentIntensityIndex,
-      minI,
-      maxI,
+      minY,
+      maxY,
     );
     final touchData = _getTouchData();
     return LineChartData(
       lineBarsData: [lineChartBar],
-      maxX: maxT,
-      minX: minT,
-      maxY: maxI,
-      minY: minI,
+      maxX: maxX,
+      minX: minX,
+      maxY: maxY,
+      minY: minY,
       titlesData: _getTitlesData(size),
       borderData: FlBorderData(show: false),
       lineTouchData: touchData,
@@ -112,18 +250,18 @@ class CarbonIntensityChartGeneratorFactory {
       },
       touchTooltipData: LineTouchTooltipData(
         getTooltipColor: (touchedSpot) => defaultTouchColor,
-        getTooltipItems: _intensityAndTimeTooltipItems,
+        getTooltipItems: _yAndXTimeTooltipItems,
       ),
     );
   }
 
-  static List<double> _getMinMaxForTime(List<FlSpot> dots) {
-    double minT = dots.first.x;
-    double maxT = dots.last.x;
-    return [minT, maxT];
+  static List<double> _getMinMaxForX(List<FlSpot> dots) {
+    double minX = dots.first.x;
+    double maxX = dots.last.x;
+    return [minX, maxX];
   }
 
-  static List<double> _getMinMaxForCI(List<FlSpot> dots) {
+  static List<double> _getMinMaxForY(List<FlSpot> dots) {
     double max = dots.first.y;
     double min = dots.first.y;
     for (var spot in dots) {
@@ -137,38 +275,19 @@ class CarbonIntensityChartGeneratorFactory {
     return [min, max];
   }
 
-  static int _getCurrentIntensityIndex(List<PeriodData> past) {
-    for (var i = past.length - 1; i >= 0; i--) {
-      // return the latest valid actual point of data
-      if (past[i].intensity.actual != null) {
-        return i;
-      }
-    }
-    return 0;
-  }
+  FlSpot _convertPeriodToSpot(PeriodData<T> period);
 
-  static FlSpot _convertPeriodToSpot(PeriodData period) {
-    final double y = CarbonIntensityCaller.convertToInt(period) + 0.0;
-    final DateTime from = DateTime.parse(period.from);
-    final DateTime to = DateTime.parse(period.to);
-    final double x =
-        (from.toLocal().millisecondsSinceEpoch +
-            to.toLocal().millisecondsSinceEpoch) /
-        2;
-    return FlSpot(x, y);
-  }
-
-  static List<FlSpot> _convertToChartData(List<PeriodData> periods) {
+  List<FlSpot> _convertToChartData(List<PeriodData<T>> periods) {
     return periods.map(_convertPeriodToSpot).toList();
   }
 
-  static LineChartBarData _getLineChartBarData(
+  LineChartBarData _getLineChartBarData(
     List<FlSpot> data,
     int currentSpotIndex,
-    double? minIntensity,
-    double? maxIntensity,
+    double? minY,
+    double? maxY,
   ) {
-    _constrainGradientToSpecific(minIntensity, maxIntensity);
+    _constrainGradientToSpecific(minY, maxY);
 
     return LineChartBarData(
       showingIndicators: [currentSpotIndex],
@@ -184,16 +303,13 @@ class CarbonIntensityChartGeneratorFactory {
     );
   }
 
-  static void _constrainGradientToSpecific(
-    double? minIntensity,
-    double? maxIntensity,
-  ) {
-    double minStop = minIntensity! / maxPossibleIntensity;
-    double maxStop = maxIntensity! / maxPossibleIntensity;
-    List<Color> colors = List.from(ciGradient.colors);
-    List<double> stops = List.from(ciGradient.stops!);
-    Color? minColor = lerp(ciGradient, minStop);
-    Color? maxColor = lerp(ciGradient, maxStop);
+  void _constrainGradientToSpecific(double? minY, double? maxY) {
+    double minStop = minY! / maxPossibleY;
+    double maxStop = maxY! / maxPossibleY;
+    List<Color> colors = List.from(yGradient.colors);
+    List<double> stops = List.from(yGradient.stops!);
+    Color? minColor = lerp(yGradient, minStop);
+    Color? maxColor = lerp(yGradient, maxStop);
     int i, j;
     for (i = 0; i < stops.length; i++) {
       if (stops[i] > minStop) {
@@ -225,8 +341,8 @@ class CarbonIntensityChartGeneratorFactory {
     colors.add(maxColor ?? defaultTouchColor);
     stops.add(maxStop);
 
-    minI = minIntensity;
-    maxI = maxIntensity;
+    this.minY = minY;
+    this.maxY = maxY;
 
     //normalise stops
     stops = stops
@@ -245,45 +361,17 @@ class CarbonIntensityChartGeneratorFactory {
     // specificGradient = ciGradient;
   }
 
-  // Carbon intensity by source:
-  // Coal: ~820 gCO₂e/kWh
-  // Natural Gas: ~490 gCO₂e/kWh
-  // Solar PV: ~48 gCO₂e/kWh
-  // Wind: ~11 gCO₂e/kWh
-  // Nuclear: ~12 gCO₂e/kWh
-  static double minI = 0;
-  static double maxI = 500;
-  static const double maxPossibleIntensity = 500;
-  static const List<double> intensityStops = [0, 100, 200, 300, 500];
-  static final List<double> fractionStops = intensityStops
-      .map((x) => x / maxPossibleIntensity)
-      .toList();
-  static const List<Color> ciColors = [
-    Colors.blue,
-    Colors.green,
-    Colors.yellow,
-    Colors.red,
-    Colors.black,
-  ];
-  static final LinearGradient ciGradient = LinearGradient(
-    begin: Alignment.bottomCenter,
-    end: Alignment.topCenter,
-    colors: ciColors,
-    stops: fractionStops,
-  );
-  static LinearGradient specificGradient = ciGradient;
-  static const Color defaultTouchColor = Colors.black;
-  static LineTouchData ciTouchData = LineTouchData(
+  LineTouchData yTouchData() => LineTouchData(
     enabled: true,
     handleBuiltInTouches: false,
     getTouchedSpotIndicator: _getTouchedIndicator,
     touchTooltipData: LineTouchTooltipData(
       getTooltipColor: (touchedSpot) => defaultTouchColor,
-      getTooltipItems: _intensityAndTimeTooltipItems,
+      getTooltipItems: _yAndXTimeTooltipItems,
     ),
   );
 
-  static List<TouchedSpotIndicatorData?> _getTouchedIndicator(
+  List<TouchedSpotIndicatorData?> _getTouchedIndicator(
     LineChartBarData bar,
     List<int> indices,
   ) {
@@ -300,7 +388,7 @@ class CarbonIntensityChartGeneratorFactory {
     }).toList();
   }
 
-  static List<LineTooltipItem?> _intensityAndTimeTooltipItems(
+  List<LineTooltipItem?> _yAndXTimeTooltipItems(
     List<LineBarSpot> spots,
   ) {
     return spots
@@ -315,8 +403,8 @@ class CarbonIntensityChartGeneratorFactory {
 
   // normalize Y as it would inside the gradient paint
   // just dividing by maxPossibleIntensity does not work, have to use L1 norm
-  static Color? _getColorForY(double y) =>
-      lerp(specificGradient, (y - minI) / (maxI - minI));
+  Color? _getColorForY(double y) =>
+      lerp(specificGradient, (y - minY) / (maxY - minY));
 
   static Color? lerp(Gradient gradient, double t) {
     // return lerpGradient(gradient.colors, gradient.stops!, t);// this is used in fl_chart to render.
@@ -335,7 +423,7 @@ class CarbonIntensityChartGeneratorFactory {
     return colors.last;
   }
 
-  static FlTitlesData _getTitlesData(DeviceSize size) {
+  FlTitlesData _getTitlesData(DeviceSize size) {
     double interval;
     switch (size) {
       case DeviceSize.large:
@@ -351,7 +439,7 @@ class CarbonIntensityChartGeneratorFactory {
       rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
       topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
       bottomTitles: AxisTitles(
-        axisNameWidget: Text("Time"),
+        axisNameWidget: Text(xAxisName),
         axisNameSize: 20,
         sideTitles: SideTitles(
           showTitles: true,
@@ -363,12 +451,12 @@ class CarbonIntensityChartGeneratorFactory {
           maxIncluded: false,
         ),
       ),
-      leftTitles: const AxisTitles(
-        axisNameWidget: Text("Carbon Intensity ($UNIT)"),
+      leftTitles: AxisTitles(
+        axisNameWidget: Text(yAxisName),
         axisNameSize: 23,
         sideTitles: SideTitles(
           showTitles: true,
-          interval: intensityInterval,
+          interval: yInterval,
           getTitlesWidget: _leftTitleWidgets,
           reservedSize: 50,
           minIncluded: false,
@@ -378,14 +466,7 @@ class CarbonIntensityChartGeneratorFactory {
     );
   }
 
-  static const String UNIT = "gCO2/kWh";
-  static const textStyle = TextStyle(fontSize: 15, fontWeight: FontWeight.bold);
-  static const int intervalHoursForLargeWidth = 5;
-  static const int intervalHours = 12;
-  static const double hour = 60 * 60 * 1000;
-  static const double intensityInterval = 25;
-
-  static Widget _leftTitleWidgets(double value, TitleMeta meta) {
+  Widget _leftTitleWidgets(double value, TitleMeta meta) {
     return Text(
       value.round().toString(),
       style: textStyle,
@@ -393,7 +474,7 @@ class CarbonIntensityChartGeneratorFactory {
     );
   }
 
-  static Widget _bottomTitleWidgets(
+  Widget _bottomTitleWidgets(
     double timestamp,
     TitleMeta meta,
     DeviceSize size,
@@ -405,7 +486,7 @@ class CarbonIntensityChartGeneratorFactory {
     );
   }
 
-  static String _toReadableTimeStamp(
+  String _toReadableTimeStamp(
     double timestamp, {
     bool includeDateAtMidnight = false,
     DeviceSize? size,

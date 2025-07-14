@@ -35,17 +35,17 @@ class CarbonIntensityCaller extends ApiCaller {
   );
 
   static int convertToInt(PeriodData period) {
-    final intensity = period.intensity;
+    final intensity = period.value;
     return intensity.actual ?? intensity.forecast ?? -1;
   }
 
-  Future<PeriodData> getCurrentIntensity() async {
+  Future<PeriodData<IntensityData>> getCurrentIntensity() async {
     final response = await _get('$_intensity/');
     if (!isValidResponse(response)) {
       throw Exception("No intensity found");
     }
 
-    final List<PeriodData> data = await _parseIntensityAndTime(response);
+    final List<PeriodData<IntensityData>> data = await _parseIntensityAndTime(response);
     if (data.isEmpty) {
       throw Exception("No intensity found");
     }
@@ -53,7 +53,7 @@ class CarbonIntensityCaller extends ApiCaller {
     return data.first;
   }
 
-  Future<List<PeriodData>> getIntensityForDate(DateTime date) async {
+  Future<List<PeriodData<IntensityData>>> getIntensityForDate(DateTime date) async {
     final formattedDate = _dateFormatter.format(date);
     final response = await _get('$_intensity/date/$formattedDate/');
     return !isValidResponse(response)
@@ -61,7 +61,7 @@ class CarbonIntensityCaller extends ApiCaller {
         : await _parseIntensityAndTime(response);
   }
 
-  Future<List<PeriodData>> getIntensityFrom({
+  Future<List<PeriodData<IntensityData>>> getIntensityFrom({
     required DateTime from,
     FromModifier modifier = FromModifier.none,
     DateTime? to,
@@ -101,13 +101,15 @@ class CarbonIntensityCaller extends ApiCaller {
 
   List<IntensityData> _parseIntensity(Response response) {
     final periods = _parseIntensityAndTime(response);
-    return periods.map((p) => p.intensity).toList();
+    return periods.map((p) => p.value).toList();
   }
 
-  List<PeriodData> _parseIntensityAndTime(Response response) {
+  List<PeriodData<IntensityData>> _parseIntensityAndTime(Response response) {
     final json = jsonDecode(response.body);
     final List data = json['data'];
-    return data.map((e) => PeriodData.fromJson(e)).toList();
+    return data.map((e) {
+      return PeriodData<IntensityData>(from: e["from"], to: e["to"], value: IntensityData.fromJson(e["intensity"]));
+    }).toList();
   }
 }
 
@@ -129,20 +131,12 @@ class IntensityData {
   }
 }
 
-class PeriodData {
+class PeriodData<T> {
   final String from;
   final String to;
-  final IntensityData intensity;
+  final T value;
 
-  PeriodData({required this.from, required this.to, required this.intensity});
-
-  factory PeriodData.fromJson(Map<String, dynamic> json) {
-    return PeriodData(
-      from: json['from'],
-      to: json['to'],
-      intensity: IntensityData.fromJson(json['intensity']),
-    );
-  }
+  PeriodData({required this.from, required this.to, required this.value});
 }
 
 // ---------------- Modifier Enum ----------------

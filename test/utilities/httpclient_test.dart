@@ -6,7 +6,7 @@ void main() {
   group('Testing httpclient\'s CarbonIntensityCaller', () {
     test('get current intensity', () async {
       var period = await client.getCurrentIntensity();
-      expect(period.intensity.forecast?.isFinite, true);
+      expect(period.value.forecast?.isFinite, true);
     });
 
     test('get current intensity for date in the past', () async {
