@@ -1,3 +1,4 @@
+import 'package:electricity_prices_and_carbon_intensity/electricty.dart';
 import 'package:electricity_prices_and_carbon_intensity/widgets/chart.dart';
 import 'package:electricity_prices_and_carbon_intensity/utilities/httpclient.dart';
 import 'package:flutter/material.dart';
@@ -22,7 +23,8 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.lightGreen),
       ),
-      home: const MyHomePage(title: 'Current Carbon Intensity'),
+      // home: const MyHomePage(title: 'Current Carbon Intensity'),
+      home: const ElectricityPrices(),
     );
   }
 }
