@@ -19,21 +19,21 @@ class CarbonIntensityChartGeneratorFactory
 
   CarbonIntensityChartGeneratorFactory.all(
     this.caller,
-    super.setStateFn,
-    super.xAxisName,
-    super.yAxisName,
-    super.intervalHoursForLargeWidth,
-    super.intervalHours,
-    super.hour,
-    super.yInterval,
-    super.maxPossibleY,
-    super.yStops,
-    super.fractionYStops,
-    super.yColors,
-    super.yGradient,
-    super.maxY,
-    super.minY,
-    super.specificGradient, {
+      {
+    required super.setStateFn,
+    required super.xAxisName,
+    required super.yAxisName,
+    required super.intervalHoursForLargeWidth,
+    required super.intervalHours,
+    required super.yInterval,
+    required super.maxPossibleY,
+    required super.yStops,
+    required super.fractionYStops,
+    required super.yColors,
+    required super.yGradient,
+    required super.maxY,
+    required super.minY,
+    required super.specificGradient,
     super.textStyle = const TextStyle(
       fontSize: 15,
       fontWeight: FontWeight.bold,
@@ -45,21 +45,20 @@ class CarbonIntensityChartGeneratorFactory
     void Function(VoidCallback) setStateFn,
   ) : this.all(
         caller,
-        setStateFn,
-        "Carbon Intensity (gCO2/kWh)",
-        "Time",
-        5,
-        12,
-        60 * 60 * 1000,
-        25,
-        500,
-        ChartGeneratorFactory.defaultStops,
-        ChartGeneratorFactory.defaultFractionStops,
-        ChartGeneratorFactory.defaultColors,
-        ChartGeneratorFactory.defaultGradient,
-        500,
-        0,
-        ChartGeneratorFactory.defaultGradient,
+        setStateFn: setStateFn,
+        yAxisName: "Carbon Intensity (gCO2/kWh)",
+        xAxisName: "Time",
+        intervalHoursForLargeWidth: 5,
+        intervalHours: 12,
+        yInterval: 25,
+        maxPossibleY: 500,
+        yStops: ChartGeneratorFactory.defaultStops,
+        fractionYStops: ChartGeneratorFactory.defaultFractionStops,
+        yColors: ChartGeneratorFactory.defaultColors,
+        yGradient: ChartGeneratorFactory.defaultGradient,
+        maxY: 500,
+        minY: 0,
+        specificGradient: ChartGeneratorFactory.defaultGradient,
       );
 
   @override
@@ -79,11 +78,11 @@ class CarbonIntensityChartGeneratorFactory
     List<PeriodData<IntensityData>> all = List.from(past);
     all.addAll(future);
 
-    List<FlSpot> spots = _convertToChartData(all);
+    List<FlSpot> spots = convertToChartData(all);
 
     return (BuildContext context, DeviceSize size) {
       this.backgroundColor = Theme.of(context).colorScheme.surface;
-      return _getChartData(spots, currentIntensityIndex, size);
+      return getChartData(spots, currentIntensityIndex, size);
     };
   }
 
@@ -98,22 +97,20 @@ class CarbonIntensityChartGeneratorFactory
   }
 
   @override
-  FlSpot _convertPeriodToSpot(PeriodData<IntensityData> period) {
+  FlSpot convertPeriodToSpot(PeriodData<IntensityData> period) {
     final double y = CarbonIntensityCaller.convertToInt(period) + 0.0;
-    final DateTime from = DateTime.parse(period.from);
-    final DateTime to = DateTime.parse(period.to);
     final double x =
-        (from.toLocal().millisecondsSinceEpoch +
-            to.toLocal().millisecondsSinceEpoch) /
+        (period.from.toLocal().millisecondsSinceEpoch +
+            period.to.toLocal().millisecondsSinceEpoch) /
         2;
     return FlSpot(x, y);
   }
 
   @override
-  List<FlSpot> _convertToChartData(
+  List<FlSpot> convertToChartData(
     List<PeriodData<IntensityData>> periods,
   ) {
-    return periods.map(_convertPeriodToSpot).toList();
+    return periods.map(convertPeriodToSpot).toList();
   }
 }
 
@@ -156,30 +153,30 @@ abstract class ChartGeneratorFactory<T> {
   bool handleBuiltInTouches = false;
   late Color backgroundColor;
 
-  ChartGeneratorFactory(
-    this.setStateFn,
-    this.xAxisName,
-    this.yAxisName,
-    this.intervalHoursForLargeWidth,
-    this.intervalHours,
-    this.hour,
-    this.yInterval,
-    this.maxPossibleY,
-    this.yStops,
-    this.fractionYStops,
-    this.yColors,
-    this.yGradient,
-    this.maxY,
-    this.minY,
-    this.specificGradient, {
+  ChartGeneratorFactory({
+    required this.setStateFn,
+    required this.xAxisName,
+    required this.yAxisName,
+    required this.intervalHoursForLargeWidth,
+    required this.intervalHours,
+    this.hour = 60 * 60 * 1000,
+    required this.yInterval,
+    required this.maxPossibleY,
+    required this.yStops,
+    required this.fractionYStops,
+    required this.yColors,
+    required this.yGradient,
+    required this.maxY,
+    required this.minY,
+    required this.specificGradient,
     this.textStyle = const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
   });
 
   Future<LineChartData Function(BuildContext, DeviceSize)> getChartGenerator();
 
-  LineChartData _getChartData(
+  LineChartData getChartData(
     List<FlSpot> data,
-    int currentIntensityIndex,
+    int currentSpotIndex,
     DeviceSize size,
   ) {
     double? minX, maxX, minY, maxY;
@@ -189,7 +186,7 @@ abstract class ChartGeneratorFactory<T> {
     }
     final lineChartBar = _getLineChartBarData(
       data,
-      currentIntensityIndex,
+      currentSpotIndex,
       minY,
       maxY,
     );
@@ -210,7 +207,7 @@ abstract class ChartGeneratorFactory<T> {
           LineBarSpot(
             lineChartBar,
             0,
-            lineChartBar.spots[currentIntensityIndex],
+            lineChartBar.spots[currentSpotIndex],
           ),
         ]),
       ],
@@ -275,10 +272,10 @@ abstract class ChartGeneratorFactory<T> {
     return [min, max];
   }
 
-  FlSpot _convertPeriodToSpot(PeriodData<T> period);
+  FlSpot convertPeriodToSpot(PeriodData<T> period);
 
-  List<FlSpot> _convertToChartData(List<PeriodData<T>> periods) {
-    return periods.map(_convertPeriodToSpot).toList();
+  List<FlSpot> convertToChartData(List<PeriodData<T>> periods) {
+    return periods.map(convertPeriodToSpot).toList();
   }
 
   LineChartBarData _getLineChartBarData(
