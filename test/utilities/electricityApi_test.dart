@@ -1,3 +1,4 @@
+import 'package:electricity_prices_and_carbon_intensity/utilities/httpclient.dart';
 import 'package:test/test.dart';
 import 'package:electricity_prices_and_carbon_intensity/utilities/electricityApiCaller.dart';
 
@@ -24,7 +25,7 @@ void main() {
     test('get tariff rate from', () async {
       DateTime from = DateTime(2025, 3, 9, 11, 30);
       DateTime to = DateTime(2025, 3, 9, 19, 30);
-      List<Rate> rates = await client.getTariffsFrom(
+      List<PeriodData<Rate>> rates = await client.getTariffsFrom(
         productCode,
         tariffBand,
         from,

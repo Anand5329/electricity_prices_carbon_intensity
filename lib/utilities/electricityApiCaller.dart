@@ -1,8 +1,14 @@
 import 'package:electricity_prices_and_carbon_intensity/utilities/httpclient.dart';
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart';
 import 'dart:convert';
 import 'package:intl/intl.dart';
+import 'package:logger/logger.dart';
+
+import '../widgets/chart.dart';
+
+var logger = Logger(filter: null, printer: PrettyPrinter(), output: null);
 
 class ElectricityApiCaller extends ApiCaller {
   static const String _baseUrl = "api.octopus.energy";
@@ -13,7 +19,6 @@ class ElectricityApiCaller extends ApiCaller {
   };
 
   static const String _electricityTariffString = "electricity-tariffs";
-  static const String _tariffPrefix = "E-1R";
   static const String _products = "products";
 
   static const String _periodFrom = "period_from";
@@ -52,21 +57,29 @@ class ElectricityApiCaller extends ApiCaller {
     }
   }
 
-  Future<Product> getProductWithCode(String code, {DateTime? tariffsActiveAt}) async {
+  Future<Product> getProductWithCode(
+    String code, {
+    DateTime? tariffsActiveAt,
+  }) async {
     String endpoint = "$_products/$code/";
     Map<String, dynamic> queryParams = {};
     if (tariffsActiveAt != null) {
-      queryParams.putIfAbsent(_tariffsActiveAt, () => dateFormat.format(tariffsActiveAt));
+      queryParams.putIfAbsent(
+        _tariffsActiveAt,
+        () => dateFormat.format(tariffsActiveAt),
+      );
     }
     Response response = await _get(endpoint, queryParams: queryParams);
     if (isValidResponse(response)) {
       return _parseProduct(response);
     } else {
-      throw Exception("Could not fetch product with code $code. \nError: ${response.body}");
+      throw Exception(
+        "Could not fetch product with code $code. \nError: ${response.body}",
+      );
     }
   }
 
-  Future<List<Rate>> getTariffsFrom(
+  Future<List<PeriodData<Rate>>> getTariffsFrom(
     String product,
     String tariffCode,
     DateTime from, {
@@ -81,6 +94,7 @@ class ElectricityApiCaller extends ApiCaller {
     if (to != null) {
       queryParams.putIfAbsent(_periodTo, () => dateFormat.format(to));
     }
+    logger.d(queryParams);
     Response response = await _get(endpoint, queryParams: queryParams);
     if (isValidResponse(response)) {
       return _parseRates(response);
@@ -102,9 +116,17 @@ class ElectricityApiCaller extends ApiCaller {
     return Product.fromJson(json);
   }
 
-  static List<Rate> _parseRates(Response response) {
+  static List<PeriodData<Rate>> _parseRates(Response response) {
     List<dynamic> data = _parseListHelper(response);
-    return data.map((rate) => Rate.fromJson(rate)).toList();
+    return data.reversed
+        .map(
+          (json) => PeriodData<Rate>(
+            from: json['valid_from'],
+            to: json['valid_to'],
+            value: Rate.fromJson(json),
+          ),
+        )
+        .toList();
   }
 
   static List<dynamic> _parseListHelper(Response response) {
@@ -138,7 +160,11 @@ class Product {
     index = (index == -1) ? date.length : index;
     date = "${date.substring(0, index)}Z";
     DateTime availableFrom = ElectricityApiCaller.dateFormat.parse(date);
-    final Product product = Product(jsonData["full_name"], availableFrom, jsonData["code"]);
+    final Product product = Product(
+      jsonData["full_name"],
+      availableFrom,
+      jsonData["code"],
+    );
     _addTariffCodes(jsonData, product);
     return product;
   }
@@ -172,25 +198,107 @@ enum RateType {
 class Rate {
   final double valueExcVat;
   final double valueIncVat;
-  final String validFrom;
-  final String validTo;
   final String? paymentMethod;
 
-  const Rate(
-    this.valueExcVat,
-    this.valueIncVat,
-    this.validFrom,
-    this.validTo,
-    this.paymentMethod,
-  );
+  const Rate(this.valueExcVat, this.valueIncVat, this.paymentMethod);
 
   factory Rate.fromJson(Map<String, dynamic> jsonData) {
     return Rate(
       jsonData['value_exc_vat'],
       jsonData['value_inc_vat'],
-      jsonData['valid_from'],
-      jsonData['valid_to'],
       jsonData['payment_method'],
     );
+  }
+}
+
+class ElectricityPricesChartGeneratorFactory
+    extends ChartGeneratorFactory<Rate> {
+
+  final ElectricityApiCaller _caller;
+  String _productCode;
+  String _tariffCode;
+
+  static const List<double> priceStops = [10, 20, 50, 75, 100];
+  static const List<double> fractionPriceStops = [0.1, 0.2, 0.5, 0.75, 1];
+  static const LinearGradient priceGradient =
+  LinearGradient(begin: Alignment.bottomCenter, end: Alignment.topCenter, colors: ChartGeneratorFactory.defaultColors, stops: fractionPriceStops);
+
+  ElectricityPricesChartGeneratorFactory.all(
+      this._caller,
+      this._productCode,
+      this._tariffCode,
+  {
+    required super.setStateFn,
+    required super.xAxisName,
+    required super.yAxisName,
+    required super.intervalHoursForLargeWidth,
+    required super.intervalHours,
+    required super.yInterval,
+    required super.maxPossibleY,
+    required super.yStops,
+    required super.fractionYStops,
+    required super.yColors,
+    required super.yGradient,
+    required super.maxY,
+    required super.minY,
+    required super.specificGradient,
+    super.textStyle = const TextStyle(
+      fontSize: 15,
+      fontWeight: FontWeight.bold,
+    ),
+  });
+
+  ElectricityPricesChartGeneratorFactory(ElectricityApiCaller caller, String productCode, String tariffCode, void Function(VoidCallback) setState):
+    this.all(caller, productCode, tariffCode,
+        setStateFn: setState,
+        xAxisName: "Time",
+        yAxisName: "Price (p/kWh)",
+        intervalHoursForLargeWidth: 5,
+        intervalHours: 12,
+        maxPossibleY: 100,
+        yInterval: 4,
+        maxY: 100,
+        minY: 0,
+        yStops: priceStops,
+        fractionYStops: fractionPriceStops,
+        yColors: ChartGeneratorFactory.defaultColors,
+        yGradient: priceGradient,
+        specificGradient: priceGradient
+      );
+
+
+  @override
+  FlSpot convertPeriodToSpot(PeriodData<Rate> period) {
+    return FlSpot(
+      (period.from.toLocal().millisecondsSinceEpoch +
+              period.to.toLocal().millisecondsSinceEpoch) /
+          2,
+      period.value.valueIncVat,
+    );
+  }
+
+  @override
+  Future<LineChartData Function(BuildContext context, DeviceSize size)>
+  getChartGenerator() async {
+    DateTime yesterday = DateTime.now().subtract(Duration(days: 1));
+    DateTime tomorrow = yesterday.add(Duration(days: 2));
+    List<PeriodData<Rate>> rates = await _caller.getTariffsFrom(_productCode, _tariffCode, yesterday, to: tomorrow);
+    int currentSpotIndex = _getCurrentSpotIndex(rates);
+    List<FlSpot> spots = convertToChartData(rates);
+
+    return (BuildContext context, DeviceSize size) {
+      this.backgroundColor = Theme.of(context).colorScheme.surface;
+      return getChartData(spots, currentSpotIndex, size);
+    };
+  }
+
+  static int _getCurrentSpotIndex(List<PeriodData<Rate>> rates) {
+    DateTime now = DateTime.now();
+    for (var i = 0; i < rates.length; i++) {
+      if (rates[i].from.isBefore(now) && rates[i].to.isAfter(now)) {
+        return i;
+      }
+    }
+    return rates.length - 1;
   }
 }
