@@ -1,12 +1,12 @@
 import 'package:test/test.dart';
-import 'package:electricity_prices_and_carbon_intensity/httpclient.dart';
+import 'package:electricity_prices_and_carbon_intensity/utilities/httpclient.dart';
 
 void main() {
   final client = CarbonIntensityCaller();
   group('Testing httpclient\'s CarbonIntensityCaller', () {
     test('get current intensity', () async {
-      var intensity = await client.getCurrentIntensity();
-      expect(intensity.forecast?.isFinite, true);
+      var period = await client.getCurrentIntensity();
+      expect(period.intensity.forecast?.isFinite, true);
     });
 
     test('get current intensity for date in the past', () async {

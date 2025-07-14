@@ -1,4 +1,4 @@
-import 'package:electricity_prices_and_carbon_intensity/httpclient.dart';
+import 'package:electricity_prices_and_carbon_intensity/utilities/httpclient.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';

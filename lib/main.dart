@@ -1,11 +1,11 @@
-import 'package:electricity_prices_and_carbon_intensity/chart.dart';
-import 'package:electricity_prices_and_carbon_intensity/httpclient.dart';
+import 'package:electricity_prices_and_carbon_intensity/widgets/chart.dart';
+import 'package:electricity_prices_and_carbon_intensity/utilities/httpclient.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:logger/logger.dart';
-import 'animatedCounter.dart';
-import 'nativeAdapter.dart';
+import 'widgets/animatedCounter.dart';
+import 'utilities/nativeAdapter.dart';
 
 void main() {
   runApp(const MyApp());
