@@ -15,7 +15,10 @@ class ApiCaller {
     Map<String, dynamic>? queryParams,
     Map<String, String>? headers,
   }) {
-    return this.client.get(Uri.https(baseUrl, "/$endpoint/", queryParams), headers: headers);
+    return this.client.get(
+      Uri.https(baseUrl, "/$endpoint/", queryParams),
+      headers: headers,
+    );
   }
 
   bool isValidResponse(Response response) {
@@ -45,7 +48,9 @@ class CarbonIntensityCaller extends ApiCaller {
       throw Exception("No intensity found");
     }
 
-    final List<PeriodData<IntensityData>> data = await _parseIntensityAndTime(response);
+    final List<PeriodData<IntensityData>> data = await _parseIntensityAndTime(
+      response,
+    );
     if (data.isEmpty) {
       throw Exception("No intensity found");
     }
@@ -53,7 +58,9 @@ class CarbonIntensityCaller extends ApiCaller {
     return data.first;
   }
 
-  Future<List<PeriodData<IntensityData>>> getIntensityForDate(DateTime date) async {
+  Future<List<PeriodData<IntensityData>>> getIntensityForDate(
+    DateTime date,
+  ) async {
     final formattedDate = _dateFormatter.format(date);
     final response = await _get('$_intensity/date/$formattedDate/');
     return !isValidResponse(response)
@@ -89,9 +96,7 @@ class CarbonIntensityCaller extends ApiCaller {
 
     final fromFormatted = _dateTimeFormatter.format(from);
     final response = await _get('$_intensity/$fromFormatted/$modifyString');
-    return !isValidResponse(response)
-        ? []
-        : _parseIntensityAndTime(response);
+    return !isValidResponse(response) ? [] : _parseIntensityAndTime(response);
   }
 
   Future<Response> _get(String path) async {
@@ -108,7 +113,11 @@ class CarbonIntensityCaller extends ApiCaller {
     final json = jsonDecode(response.body);
     final List data = json['data'];
     return data.map((e) {
-      return PeriodData<IntensityData>(from: e["from"], to: e["to"], value: IntensityData.fromJson(e["intensity"]));
+      return PeriodData<IntensityData>(
+        from: e["from"],
+        to: e["to"],
+        value: IntensityData.fromJson(e["intensity"]),
+      );
     }).toList();
   }
 }
@@ -132,11 +141,14 @@ class IntensityData {
 }
 
 class PeriodData<T> {
-  final String from;
-  final String to;
+  final DateTime from;
+  final DateTime to;
   final T value;
 
-  PeriodData({required this.from, required this.to, required this.value});
+  PeriodData.raw(this.from, this.to, this.value);
+
+  PeriodData({required String from, required String to, required T value})
+    : this.raw(DateTime.parse(from), DateTime.parse(to), value);
 }
 
 // ---------------- Modifier Enum ----------------
