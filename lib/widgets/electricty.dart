@@ -26,6 +26,9 @@ class _ElectricityPricesPageState extends State<ElectricityPricesPage> {
   static Product defaultProduct = Product("Agile Octopus October 2024 v1", DateTime.now().toUtc(), defaultProductCode);
   static Tariff defaultTariff = Tariff("_C", defaultTariffCode, "");
 
+  static const double _widthThreshold = 600;
+  static const double _menuWidth = 120;
+
   double _currentPrice = 0;
   String _productCode = defaultProductCode;
   String _tariffCode = defaultTariffCode;
@@ -49,8 +52,7 @@ class _ElectricityPricesPageState extends State<ElectricityPricesPage> {
 
   Future<void> _setupProductsAndTariffs() async {
     _productList = await _caller.getProducts();
-    final product = await _caller.getProductWithCode(_productCode);
-    _tariffList = product.tariffCodes;
+    _refreshTariffCodeList();
   }
 
   Future<void> _refreshTariffCodeList() async {
@@ -79,7 +81,8 @@ class _ElectricityPricesPageState extends State<ElectricityPricesPage> {
   @override
   Widget build(BuildContext context) {
     StyleComponents style = StyleComponents(Theme.of(context));
-    return Center(
+    return LayoutBuilder(builder: (BuildContext context, BoxConstraints constraints) {
+      return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
@@ -87,6 +90,7 @@ class _ElectricityPricesPageState extends State<ElectricityPricesPage> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 DropdownMenu<Product>(
+                    width: constraints.maxWidth > _widthThreshold? null : _menuWidth,
                     initialSelection: defaultProduct,
                     dropdownMenuEntries: _productList.map(
                             (product) => DropdownMenuEntry(value: product, label: product.name)).toList(),
@@ -99,6 +103,7 @@ class _ElectricityPricesPageState extends State<ElectricityPricesPage> {
                 ),
                 const SizedBox(width: 40),
                 DropdownMenu<Tariff>(
+                  width: constraints.maxWidth > _widthThreshold? null : _menuWidth,
                     initialSelection: defaultTariff,
                     dropdownMenuEntries: _tariffList.map(
                             (tariff) => DropdownMenuEntry(value: tariff, label: tariff.name)).toList(),
@@ -126,6 +131,7 @@ class _ElectricityPricesPageState extends State<ElectricityPricesPage> {
           ],
         ),
       );
+    });
   }
 }
 
