@@ -22,6 +22,7 @@ class ElectricityApiCaller extends ApiCaller {
   static const String _availableAt = "available_at";
   static const String _tariffsActiveAt = "tariffs_active_at";
 
+  /// the date format that the api expects
   static final DateFormat dateFormat = DateFormat(
     "yyyy'-'MM'-'dd'T'HH':'mm':'ss'Z'",
   );
@@ -36,7 +37,9 @@ class ElectricityApiCaller extends ApiCaller {
     );
   }
 
-  // TODO: add docstring to mention that availableAt should be UTC datetime
+  /// fetches the valid products available at given availableAt time
+  ///
+  /// availableAt should be in the UTC timezone
   Future<List<Product>> getProducts({DateTime? availableAt}) async {
     final String endpoint = "$_products/";
     final Map<String, dynamic> queryParams = {};
@@ -54,6 +57,9 @@ class ElectricityApiCaller extends ApiCaller {
     }
   }
 
+  /// fetches the product information for the given code with tariffs
+  ///
+  /// tariffsActiveAt datetime should in the UTC timezone
   Future<Product> getProductWithCode(
     String code, {
     DateTime? tariffsActiveAt,
@@ -76,12 +82,17 @@ class ElectricityApiCaller extends ApiCaller {
     }
   }
 
+  /// fetches the current price for the given product and tariff code
   Future<PeriodData<Rate>> getCurrentPrice(String productCode, String tariffCode) async {
     List<PeriodData<Rate>> prices = await getTariffsFrom(productCode, tariffCode, DateTime.now().toUtc());
     return prices.first;
   }
 
-  // TODO: add docstring to mention that from and to should be UTC datetime
+  /// fetches tariffs given product and tariff code inclusive from given date time from
+  ///
+  /// Can optionally pass a to date time that will return tariffs until that time (exclusive)
+  /// Can optionally pass a RateType to rateType for type of rates fetched
+  /// All date times must be in the UTC timezone
   Future<List<PeriodData<Rate>>> getTariffsFrom(
     String product,
     String tariffCode,

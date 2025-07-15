@@ -15,11 +15,13 @@ class CarbonIntensityCaller extends ApiCaller {
     "yyyy-MM-dd'T'HH:mm'Z'",
   );
 
+  /// converts PeriodData period to an int value
   static int convertToInt(PeriodData period) {
     final intensity = period.value;
     return intensity.actual ?? intensity.forecast ?? -1;
   }
 
+  /// fetches the current (latest) carbon intensity
   Future<PeriodData<IntensityData>> getCurrentIntensity() async {
     final response = await _get('$_intensity/');
     if (!isValidResponse(response)) {
@@ -36,6 +38,7 @@ class CarbonIntensityCaller extends ApiCaller {
     return data.first;
   }
 
+  /// fetches carbon intensity data for a particular date
   Future<List<PeriodData<IntensityData>>> getIntensityForDate(
       DateTime date,
       ) async {
@@ -46,7 +49,12 @@ class CarbonIntensityCaller extends ApiCaller {
         : await _parseIntensityAndTime(response);
   }
 
-  // TODO: add docstring to mention that from and to should be UTC datetime
+  /// fetches intensity data for the time period after the given from date and time
+  ///
+  /// Can optionally pass in a to date time (exclusive) until which carbon intensity data
+  /// will be fetched. The modifier must be se to 'to'
+  /// Can optionally pass in different modifiers: fw24h, pt24h, fw48h and to
+  /// All date time values must be in the UTC timezone.
   Future<List<PeriodData<IntensityData>>> getIntensityFrom({
     required DateTime from,
     FromModifier modifier = FromModifier.none,
