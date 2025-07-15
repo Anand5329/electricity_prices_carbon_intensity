@@ -1,0 +1,26 @@
+import 'package:flutter/material.dart';
+
+class StyleComponents {
+
+  final ThemeData _theme;
+
+  StyleComponents(this._theme);
+
+  Widget headlineTextWithPadding(String text) {
+    return paddingWrapper(headlineTextWrapper(text, _theme));
+  }
+
+  static Widget headlineTextWrapper(String text, ThemeData theme) {
+    final textStyle = theme.textTheme.displayLarge!.copyWith(
+      color: theme.colorScheme.primary,
+    );
+    return Text(text, style: textStyle);
+  }
+
+  static Widget paddingWrapper(Widget inner) {
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: inner,
+    );
+  }
+}
