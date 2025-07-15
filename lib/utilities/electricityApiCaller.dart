@@ -94,7 +94,7 @@ class ElectricityApiCaller extends ApiCaller {
     if (to != null) {
       queryParams.putIfAbsent(_periodTo, () => dateFormat.format(to));
     }
-    logger.d(queryParams);
+    // logger.d(queryParams);
     Response response = await _get(endpoint, queryParams: queryParams);
     if (isValidResponse(response)) {
       return _parseRates(response);
