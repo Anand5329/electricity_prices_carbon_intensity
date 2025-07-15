@@ -1,4 +1,4 @@
-import 'package:electricity_prices_and_carbon_intensity/electricty.dart';
+import 'package:electricity_prices_and_carbon_intensity/widgets/electricty.dart';
 import 'package:electricity_prices_and_carbon_intensity/widgets/carbonIntensity.dart';
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
