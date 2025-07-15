@@ -1,12 +1,8 @@
 import 'package:electricity_prices_and_carbon_intensity/utilities/httpclient.dart';
-import 'package:fl_chart/fl_chart.dart';
-import 'package:flutter/material.dart';
 import 'package:http/http.dart';
 import 'dart:convert';
 import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
-
-import '../widgets/chart.dart';
 
 var logger = Logger(filter: null, printer: PrettyPrinter(), output: null);
 

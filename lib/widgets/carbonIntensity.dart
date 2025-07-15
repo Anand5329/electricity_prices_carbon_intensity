@@ -4,6 +4,7 @@ import 'package:electricity_prices_and_carbon_intensity/utilities/httpclient.dar
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
+import '../utilities/carbonIntensityApiCaller.dart';
 import 'animatedCounter.dart';
 
 var logger = Logger(filter: null, printer: PrettyPrinter(), output: null);
