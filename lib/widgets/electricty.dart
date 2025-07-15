@@ -23,13 +23,15 @@ class ElectricityPricesPage extends StatefulWidget {
 class _ElectricityPricesPageState extends State<ElectricityPricesPage> {
   static const String defaultProductCode = "AGILE-24-10-01";
   static const String defaultTariffCode = "E-1R-AGILE-24-10-01-C";
+  static Product defaultProduct = Product("Agile Octopus October 2024 v1", DateTime.now().toUtc(), defaultProductCode);
+  static Tariff defaultTariff = Tariff("_C", defaultTariffCode, "");
 
   double _currentPrice = 0;
   String _productCode = defaultProductCode;
   String _tariffCode = defaultTariffCode;
 
-  List<Product> _productList = [];
-  List<String> _tariffList = [];
+  List<Product> _productList = [defaultProduct];
+  List<Tariff> _tariffList = [defaultTariff];
 
   late ElectricityApiCaller _caller;
   late ElectricityPricesChartGeneratorFactory _chartGeneratorFactory;
@@ -66,6 +68,8 @@ class _ElectricityPricesPageState extends State<ElectricityPricesPage> {
   }
 
   Future<void> _refreshElectricityPricesChart() async {
+    _chartGeneratorFactory.productCode = _productCode;
+    _chartGeneratorFactory.tariffCode = _tariffCode;
     final generator = await _chartGeneratorFactory.getChartGenerator();
     setState(() {
       _adaptiveChartWidgetBuilder = AdaptiveChartWidgetBuilder(generator);
@@ -80,8 +84,10 @@ class _ElectricityPricesPageState extends State<ElectricityPricesPage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             Row(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 DropdownMenu<Product>(
+                    initialSelection: defaultProduct,
                     dropdownMenuEntries: _productList.map(
                             (product) => DropdownMenuEntry(value: product, label: product.name)).toList(),
                     onSelected: (Product? product) {
@@ -91,17 +97,18 @@ class _ElectricityPricesPageState extends State<ElectricityPricesPage> {
                   requestFocusOnTap: true,
                   label: const Text("Product")
                 ),
-                SizedBox(width: 10),
-                DropdownMenu<String>(
+                const SizedBox(width: 40),
+                DropdownMenu<Tariff>(
+                    initialSelection: defaultTariff,
                     dropdownMenuEntries: _tariffList.map(
-                            (tariff) => DropdownMenuEntry(value: tariff, label: tariff)).toList(),
-                    onSelected: (String? tariffCode) {
-                      _tariffCode = tariffCode ?? defaultTariffCode;
+                            (tariff) => DropdownMenuEntry(value: tariff, label: tariff.name)).toList(),
+                    onSelected: (Tariff? tariff) {
+                      _tariffCode = tariff?.code ?? defaultTariffCode;
                     },
                     requestFocusOnTap: true,
                     label: const Text("Tariff")
                 ),
-                SizedBox(width: 10),
+                const SizedBox(width: 24),
                 TextButton(
                   style: style.simpleButtonStyle(),
                   child: Icon(Icons.refresh_rounded),
@@ -126,8 +133,8 @@ class ElectricityPricesChartGeneratorFactory
     extends ChartGeneratorFactory<Rate> {
 
   final ElectricityApiCaller _caller;
-  String _productCode;
-  String _tariffCode;
+  String productCode;
+  String tariffCode;
 
   static const List<double> priceStops = [10, 20, 50, 75, 100];
   static const List<double> fractionPriceStops = [0.1, 0.2, 0.5, 0.75, 1];
@@ -136,8 +143,8 @@ class ElectricityPricesChartGeneratorFactory
 
   ElectricityPricesChartGeneratorFactory.all(
       this._caller,
-      this._productCode,
-      this._tariffCode,
+      this.productCode,
+      this.tariffCode,
       {
         required super.setStateFn,
         required super.xAxisName,
@@ -193,7 +200,7 @@ class ElectricityPricesChartGeneratorFactory
   getChartGenerator() async {
     DateTime yesterday = DateTime.now().toUtc().subtract(Duration(days: 1));
     DateTime tomorrow = yesterday.add(Duration(days: 2));
-    List<PeriodData<Rate>> rates = await _caller.getTariffsFrom(_productCode, _tariffCode, yesterday, to: tomorrow);
+    List<PeriodData<Rate>> rates = await _caller.getTariffsFrom(productCode, tariffCode, yesterday, to: tomorrow);
     int currentSpotIndex = _getCurrentSpotIndex(rates);
     List<FlSpot> spots = convertToChartData(rates);
 

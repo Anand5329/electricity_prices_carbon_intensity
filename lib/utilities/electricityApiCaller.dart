@@ -164,7 +164,7 @@ class Product {
   final String name;
   final DateTime availableFrom;
   final String code;
-  final List<String> tariffCodes = List.of([]);
+  final List<Tariff> tariffCodes = List.of([]);
 
   Product(this.name, this.availableFrom, this.code);
 
@@ -183,13 +183,23 @@ class Product {
   static void _addTariffCodes(json, Product product) {
     if (json is Map && json.containsKey(tariffsKey)) {
       Map<String, dynamic> tariffs = json[tariffsKey];
-      tariffs.forEach((_, payment) {
-        payment.forEach((_, tariff) {
-          product.tariffCodes.add(tariff["code"].toString());
+      tariffs.forEach((name, payment) {
+        payment.forEach((method, tariff) {
+          product.tariffCodes.add(Tariff(name, tariff[Tariff.codeKey], method));
         });
       });
     }
   }
+}
+
+class Tariff {
+  static const String codeKey = "code";
+
+  final String name;
+  final String code;
+  final String paymentMethod;
+
+  Tariff(this.name, this.code, this.paymentMethod);
 }
 
 enum RateType {
