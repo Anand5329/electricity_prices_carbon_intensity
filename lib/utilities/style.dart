@@ -10,6 +10,14 @@ class StyleComponents {
     return paddingWrapper(headlineTextWrapper(text, _theme));
   }
 
+  ButtonStyle simpleButtonStyle() {
+    return ButtonStyle(
+      textStyle: WidgetStateProperty.all(_theme.textTheme.displaySmall),
+      foregroundColor: WidgetStateProperty.all(_theme.colorScheme.primary),
+      backgroundColor: WidgetStateProperty.all(_theme.colorScheme.inversePrimary),
+    );
+  }
+
   static Widget headlineTextWrapper(String text, ThemeData theme) {
     final textStyle = theme.textTheme.displayLarge!.copyWith(
       color: theme.colorScheme.primary,

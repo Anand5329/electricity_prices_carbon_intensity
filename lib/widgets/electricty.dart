@@ -28,6 +28,9 @@ class _ElectricityPricesPageState extends State<ElectricityPricesPage> {
   String _productCode = defaultProductCode;
   String _tariffCode = defaultTariffCode;
 
+  List<Product> _productList = [];
+  List<String> _tariffList = [];
+
   late ElectricityApiCaller _caller;
   late ElectricityPricesChartGeneratorFactory _chartGeneratorFactory;
   AdaptiveChartWidgetBuilder? _adaptiveChartWidgetBuilder;
@@ -37,8 +40,22 @@ class _ElectricityPricesPageState extends State<ElectricityPricesPage> {
     super.initState();
     _caller = ElectricityApiCaller();
     _chartGeneratorFactory = ElectricityPricesChartGeneratorFactory(_caller, defaultProductCode, defaultTariffCode, setState);
+    _setupProductsAndTariffs();
     _refreshElectricityPricesChart();
     _refreshCurrentPrice();
+  }
+
+  Future<void> _setupProductsAndTariffs() async {
+    _productList = await _caller.getProducts();
+    final product = await _caller.getProductWithCode(_productCode);
+    _tariffList = product.tariffCodes;
+  }
+
+  Future<void> _refreshTariffCodeList() async {
+    final product = await _caller.getProductWithCode(_productCode);
+    setState(() {
+      _tariffList = product.tariffCodes;
+    });
   }
 
   Future<void> _refreshCurrentPrice() async {
@@ -54,15 +71,46 @@ class _ElectricityPricesPageState extends State<ElectricityPricesPage> {
       _adaptiveChartWidgetBuilder = AdaptiveChartWidgetBuilder(generator);
     });
   }
-  //TODO: add selector for product and tariff
-
 
   @override
   Widget build(BuildContext context) {
+    StyleComponents style = StyleComponents(Theme.of(context));
     return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
+            Row(
+              children: [
+                DropdownMenu<Product>(
+                    dropdownMenuEntries: _productList.map(
+                            (product) => DropdownMenuEntry(value: product, label: product.name)).toList(),
+                    onSelected: (Product? product) {
+                      _productCode = product?.code ?? defaultProductCode;
+                      _refreshTariffCodeList();
+                    },
+                  requestFocusOnTap: true,
+                  label: const Text("Product")
+                ),
+                SizedBox(width: 10),
+                DropdownMenu<String>(
+                    dropdownMenuEntries: _tariffList.map(
+                            (tariff) => DropdownMenuEntry(value: tariff, label: tariff)).toList(),
+                    onSelected: (String? tariffCode) {
+                      _tariffCode = tariffCode ?? defaultTariffCode;
+                    },
+                    requestFocusOnTap: true,
+                    label: const Text("Tariff")
+                ),
+                SizedBox(width: 10),
+                TextButton(
+                  style: style.simpleButtonStyle(),
+                  child: Icon(Icons.refresh_rounded),
+                    onPressed: () {
+                      _refreshCurrentPrice();
+                      _refreshElectricityPricesChart();
+                    })
+              ],
+            ),
             BigAnimatedCounter(count: _currentPrice, doublePrinter: AnimatedCounter.toNDecimalPlaces(2)),
             SizedBox(height: 40),
             _adaptiveChartWidgetBuilder == null

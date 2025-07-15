@@ -183,8 +183,10 @@ class Product {
   static void _addTariffCodes(json, Product product) {
     if (json is Map && json.containsKey(tariffsKey)) {
       Map<String, dynamic> tariffs = json[tariffsKey];
-      tariffs.forEach((_, tariff) {
-        product.tariffCodes.add(tariff["code"].toString());
+      tariffs.forEach((_, payment) {
+        payment.forEach((_, tariff) {
+          product.tariffCodes.add(tariff["code"].toString());
+        });
       });
     }
   }
