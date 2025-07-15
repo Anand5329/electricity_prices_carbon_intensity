@@ -1,3 +1,4 @@
+import 'package:electricity_prices_and_carbon_intensity/utilities/style.dart';
 import 'package:electricity_prices_and_carbon_intensity/widgets/chart.dart';
 import 'package:electricity_prices_and_carbon_intensity/utilities/httpclient.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -8,7 +9,8 @@ import 'animatedCounter.dart';
 var logger = Logger(filter: null, printer: PrettyPrinter(), output: null);
 
 class CarbonIntensityPage extends StatefulWidget {
-  const CarbonIntensityPage({super.key});
+  final String title;
+  const CarbonIntensityPage({super.key, this.title = "Carbon Intensity"});
 
   @override
   State<CarbonIntensityPage> createState() => _CarbonIntensityPageState();
@@ -73,10 +75,12 @@ class _CarbonIntensityPageState extends State<CarbonIntensityPage> {
 
   @override
   Widget build(BuildContext context) {
+    final style = StyleComponents(Theme.of(context));
     return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
+            style.headlineTextWithPadding(widget.title),
             BigAnimatedCounter(count: _counter),
             SizedBox(height: 40),
             _adaptiveChartWidgetBuilder == null
@@ -98,14 +102,7 @@ class BigAnimatedCounter extends AnimatedCounter {
   }) : super(duration: ONE_SECOND, textWrapper: _bigText);
 
   static Widget _bigText(String text, ThemeData theme) {
-    final textStyle = theme.textTheme.displayLarge!.copyWith(
-      color: theme.colorScheme.primary,
-    );
-
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: Text(text, style: textStyle),
-    );
+    return StyleComponents.paddingWrapper(StyleComponents.headlineTextWrapper(text, theme));
   }
 }
 

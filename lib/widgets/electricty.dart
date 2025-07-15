@@ -1,4 +1,5 @@
 import 'package:electricity_prices_and_carbon_intensity/utilities/electricityApiCaller.dart';
+import 'package:electricity_prices_and_carbon_intensity/utilities/style.dart';
 import 'package:electricity_prices_and_carbon_intensity/widgets/chart.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -8,9 +9,9 @@ import 'package:logger/logger.dart';
 var logger = Logger(filter: null, printer: PrettyPrinter(), output: null);
 
 class ElectricityPricesPage extends StatefulWidget {
-  final String title = "Electricity Prices";
+  final String title;
 
-  const ElectricityPricesPage();
+  const ElectricityPricesPage({super.key, this.title = "Electricity Prices"});
 
   @override
   State<ElectricityPricesPage> createState() => _ElectricityPricesPageState();
@@ -42,10 +43,12 @@ class _ElectricityPricesPageState extends State<ElectricityPricesPage> {
 
   @override
   Widget build(BuildContext context) {
+    final style = StyleComponents(Theme.of(context));
     return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
+            style.headlineTextWithPadding(widget.title),
             _adaptiveChartWidgetBuilder == null
                 ? SizedBox()
                 : LayoutBuilder(builder: _adaptiveChartWidgetBuilder!.builder),
