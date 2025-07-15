@@ -149,7 +149,7 @@ class CarbonIntensityChartGeneratorFactory
   @override
   Future<LineChartData Function(BuildContext, DeviceSize)>
   getChartGenerator() async {
-    DateTime today = DateTime.now();
+    DateTime today = DateTime.now().toUtc();
     List<PeriodData<IntensityData>> past = await this.caller.getIntensityFrom(
       from: today,
       modifier: FromModifier.past24,

@@ -68,6 +68,7 @@ class CarbonIntensityCaller extends ApiCaller {
         : await _parseIntensityAndTime(response);
   }
 
+  // TODO: add docstring to mention that from and to should be UTC datetime
   Future<List<PeriodData<IntensityData>>> getIntensityFrom({
     required DateTime from,
     FromModifier modifier = FromModifier.none,
@@ -88,13 +89,13 @@ class CarbonIntensityCaller extends ApiCaller {
         if (to == null) {
           throw ArgumentError('Please supply a valid "to" datetime.');
         }
-        modifyString = '${_dateTimeFormatter.format(to)}/';
+        modifyString = '${to.toIso8601String()}/';
         break;
       case FromModifier.none:
         modifyString = '';
     }
 
-    final fromFormatted = _dateTimeFormatter.format(from);
+    final fromFormatted = from.toIso8601String();
     final response = await _get('$_intensity/$fromFormatted/$modifyString');
     return !isValidResponse(response) ? [] : _parseIntensityAndTime(response);
   }

@@ -15,7 +15,7 @@ void main() {
     });
 
     final String productCode = "AGILE-24-10-01";
-    final String tariffBand = "E-1R-AGILE-24-10-01-C";
+    final String tariffCode = "E-1R-AGILE-24-10-01-C";
 
     test('get specific produce with code', () async {
       Product product = await client.getProductWithCode(productCode);
@@ -27,11 +27,18 @@ void main() {
       DateTime to = DateTime(2025, 3, 9, 19, 30);
       List<PeriodData<Rate>> rates = await client.getTariffsFrom(
         productCode,
-        tariffBand,
+        tariffCode,
         from,
         to: to,
       );
       expect(rates.length, 16);
+    });
+
+    test('get current tariff', () async {
+      PeriodData<Rate> rate = await client.getCurrentPrice(productCode, tariffCode);
+      DateTime now = DateTime.now().toUtc();
+      expect(rate.from.isBefore(now), true);
+      expect(rate.to.isAfter(now), true);
     });
   });
 }

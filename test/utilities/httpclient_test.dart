@@ -1,12 +1,21 @@
+import 'dart:ffi';
+
+import 'package:logger/logger.dart';
 import 'package:test/test.dart';
 import 'package:electricity_prices_and_carbon_intensity/utilities/httpclient.dart';
 
+var logger = Logger(filter: null, printer: PrettyPrinter(), output: null);
+
 void main() {
   final client = CarbonIntensityCaller();
-  group('Testing httpclient\'s CarbonIntensityCaller', () {
+  group('Testing httpclient CarbonIntensityCaller', () {
     test('get current intensity', () async {
-      var period = await client.getCurrentIntensity();
+      PeriodData<IntensityData> period = await client.getCurrentIntensity();
+      DateTime now = DateTime.now().toUtc();
+
       expect(period.value.forecast?.isFinite, true);
+      expect(period.from.isBefore(now), true);
+      expect(period.to.isBefore(now), true);
     });
 
     test('get current intensity for date in the past', () async {

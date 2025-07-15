@@ -40,6 +40,7 @@ class ElectricityApiCaller extends ApiCaller {
     );
   }
 
+  // TODO: add docstring to mention that availableAt should be UTC datetime
   Future<List<Product>> getProducts({DateTime? availableAt}) async {
     final String endpoint = "$_products/";
     final Map<String, dynamic> queryParams = {};
@@ -79,6 +80,12 @@ class ElectricityApiCaller extends ApiCaller {
     }
   }
 
+  Future<PeriodData<Rate>> getCurrentPrice(String productCode, String tariffCode) async {
+    List<PeriodData<Rate>> prices = await getTariffsFrom(productCode, tariffCode, DateTime.now().toUtc());
+    return prices.first;
+  }
+
+  // TODO: add docstring to mention that from and to should be UTC datetime
   Future<List<PeriodData<Rate>>> getTariffsFrom(
     String product,
     String tariffCode,
@@ -89,10 +96,10 @@ class ElectricityApiCaller extends ApiCaller {
     String endpoint =
         "$_products/$product/$_electricityTariffString/$tariffCode/$rateType/";
     Map<String, dynamic> queryParams = <String, dynamic>{
-      _periodFrom: dateFormat.format(from),
+      _periodFrom: from.toIso8601String(),
     };
     if (to != null) {
-      queryParams.putIfAbsent(_periodTo, () => dateFormat.format(to));
+      queryParams.putIfAbsent(_periodTo, () => to.toIso8601String());
     }
     // logger.d(queryParams);
     Response response = await _get(endpoint, queryParams: queryParams);
@@ -154,6 +161,7 @@ class Product {
 
   Product(this.name, this.availableFrom, this.code);
 
+  // TODO: fix timezone parsing
   factory Product.fromJson(jsonData) {
     String date = jsonData["available_from"];
     int index = date.lastIndexOf("+");
@@ -280,7 +288,7 @@ class ElectricityPricesChartGeneratorFactory
   @override
   Future<LineChartData Function(BuildContext context, DeviceSize size)>
   getChartGenerator() async {
-    DateTime yesterday = DateTime.now().subtract(Duration(days: 1));
+    DateTime yesterday = DateTime.now().toUtc().subtract(Duration(days: 1));
     DateTime tomorrow = yesterday.add(Duration(days: 2));
     List<PeriodData<Rate>> rates = await _caller.getTariffsFrom(_productCode, _tariffCode, yesterday, to: tomorrow);
     int currentSpotIndex = _getCurrentSpotIndex(rates);
@@ -293,7 +301,7 @@ class ElectricityPricesChartGeneratorFactory
   }
 
   static int _getCurrentSpotIndex(List<PeriodData<Rate>> rates) {
-    DateTime now = DateTime.now();
+    DateTime now = DateTime.now().toUtc();
     for (var i = 0; i < rates.length; i++) {
       if (rates[i].from.isBefore(now) && rates[i].to.isAfter(now)) {
         return i;
