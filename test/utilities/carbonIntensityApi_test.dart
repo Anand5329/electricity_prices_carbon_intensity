@@ -1,5 +1,3 @@
-import 'dart:ffi';
-
 import 'package:electricity_prices_and_carbon_intensity/utilities/carbonIntensityApiCaller.dart';
 import 'package:logger/logger.dart';
 import 'package:test/test.dart';

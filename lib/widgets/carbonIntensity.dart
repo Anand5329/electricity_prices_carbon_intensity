@@ -76,7 +76,6 @@ class _CarbonIntensityPageState extends State<CarbonIntensityPage> {
 
   @override
   Widget build(BuildContext context) {
-    final style = StyleComponents(Theme.of(context));
     return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
