@@ -7,16 +7,16 @@ import 'package:logger/logger.dart';
 
 var logger = Logger(filter: null, printer: PrettyPrinter(), output: null);
 
-class ElectricityPrices extends StatefulWidget {
+class ElectricityPricesPage extends StatefulWidget {
   final String title = "Electricity Prices";
 
-  const ElectricityPrices();
+  const ElectricityPricesPage();
 
   @override
-  State<ElectricityPrices> createState() => _ElectricityState();
+  State<ElectricityPricesPage> createState() => _ElectricityPricesPageState();
 }
 
-class _ElectricityState extends State<ElectricityPrices> {
+class _ElectricityPricesPageState extends State<ElectricityPricesPage> {
   static const String defaultProductCode = "AGILE-24-10-01";
   static const String defaultTariffCode = "E-1R-AGILE-24-10-01-C";
 
@@ -42,12 +42,7 @@ class _ElectricityState extends State<ElectricityPrices> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(widget.title),
-      ),
-      body: Center(
+    return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
@@ -56,12 +51,6 @@ class _ElectricityState extends State<ElectricityPrices> {
                 : LayoutBuilder(builder: _adaptiveChartWidgetBuilder!.builder),
           ],
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _refreshElectricityPricesChart,
-        tooltip: 'Refresh Electricity Prices',
-        child: const Icon(Icons.refresh_rounded),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
-    );
+      );
   }
 }
