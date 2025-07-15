@@ -168,13 +168,9 @@ class Product {
 
   Product(this.name, this.availableFrom, this.code);
 
-  // TODO: fix timezone parsing
   factory Product.fromJson(jsonData) {
     String date = jsonData["available_from"];
-    int index = date.lastIndexOf("+");
-    index = (index == -1) ? date.length : index;
-    date = "${date.substring(0, index)}Z";
-    DateTime availableFrom = ElectricityApiCaller.dateFormat.parse(date);
+    DateTime availableFrom = DateTime.parse(date);
     final Product product = Product(
       jsonData["full_name"],
       availableFrom,
