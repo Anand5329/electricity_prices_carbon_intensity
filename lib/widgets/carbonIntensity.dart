@@ -80,7 +80,6 @@ class _CarbonIntensityPageState extends State<CarbonIntensityPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            style.headlineTextWithPadding(widget.title),
             BigAnimatedCounter(count: _counter),
             SizedBox(height: 40),
             _adaptiveChartWidgetBuilder == null
@@ -89,20 +88,6 @@ class _CarbonIntensityPageState extends State<CarbonIntensityPage> {
           ],
         ),
       );
-  }
-}
-
-class BigAnimatedCounter extends AnimatedCounter {
-  static const Duration ONE_SECOND = Duration(seconds: 1);
-
-  const BigAnimatedCounter({
-    super.key,
-    required super.count,
-    super.curve = Curves.fastOutSlowIn,
-  }) : super(duration: ONE_SECOND, textWrapper: _bigText);
-
-  static Widget _bigText(String text, ThemeData theme) {
-    return StyleComponents.paddingWrapper(StyleComponents.headlineTextWrapper(text, theme));
   }
 }
 

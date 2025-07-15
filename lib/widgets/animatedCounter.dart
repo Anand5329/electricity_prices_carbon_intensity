@@ -3,6 +3,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
+import '../utilities/style.dart';
+
 class AnimatedCounter extends ImplicitlyAnimatedWidget {
   final int count;
   final Widget Function(String, ThemeData) textWrapper;
@@ -35,5 +37,20 @@ class _AnimatedCounterState extends AnimatedWidgetBaseState<AnimatedCounter> {
   @override
   void forEachTween(TweenVisitor<dynamic> visitor) {
     _count = visitor(_count, widget.count, (dynamic value) => new IntTween(begin: value)) as IntTween;
+  }
+}
+
+
+class BigAnimatedCounter extends AnimatedCounter {
+  static const Duration ONE_SECOND = Duration(seconds: 1);
+
+  const BigAnimatedCounter({
+    super.key,
+    required super.count,
+    super.curve = Curves.fastOutSlowIn,
+  }) : super(duration: ONE_SECOND, textWrapper: _bigText);
+
+  static Widget _bigText(String text, ThemeData theme) {
+    return StyleComponents.paddingWrapper(StyleComponents.headlineTextWrapper(text, theme));
   }
 }
