@@ -34,6 +34,7 @@ class _ElectricityPricesPageState extends State<ElectricityPricesPage> {
 
   @override
   void initState() {
+    super.initState();
     _caller = ElectricityApiCaller();
     _chartGeneratorFactory = ElectricityPricesChartGeneratorFactory(_caller, defaultProductCode, defaultTariffCode, setState);
     _refreshElectricityPricesChart();
@@ -58,12 +59,12 @@ class _ElectricityPricesPageState extends State<ElectricityPricesPage> {
 
   @override
   Widget build(BuildContext context) {
-    final style = StyleComponents(Theme.of(context));
     return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             BigAnimatedCounter(count: _currentPrice, doublePrinter: AnimatedCounter.toNDecimalPlaces(2)),
+            SizedBox(height: 40),
             _adaptiveChartWidgetBuilder == null
                 ? SizedBox()
                 : LayoutBuilder(builder: _adaptiveChartWidgetBuilder!.builder),
