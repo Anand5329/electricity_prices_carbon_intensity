@@ -22,6 +22,7 @@ class _CarbonIntensityPageState extends State<CarbonIntensityPage> {
   final _caller = CarbonIntensityCaller();
   late CarbonIntensityChartGeneratorFactory _chartGeneratorFactory;
   AdaptiveChartWidgetBuilder? _adaptiveChartWidgetBuilder;
+  PeriodData<IntensityData>? _minPeriod;
 
   void _resetCounter() {
     setState(() {
@@ -58,8 +59,10 @@ class _CarbonIntensityPageState extends State<CarbonIntensityPage> {
 
   Future<void> _refreshChartData() async {
     final _chartGenerator = await _chartGeneratorFactory.getChartGenerator();
+    final minPeriod = await _caller.forecastMinimum();
     setState(() {
       _adaptiveChartWidgetBuilder = AdaptiveChartWidgetBuilder(_chartGenerator);
+      _minPeriod = minPeriod;
     });
   }
 
@@ -85,6 +88,19 @@ class _CarbonIntensityPageState extends State<CarbonIntensityPage> {
           _adaptiveChartWidgetBuilder == null
               ? SizedBox()
               : LayoutBuilder(builder: _adaptiveChartWidgetBuilder!.builder),
+          _minPeriod == null
+              ? SizedBox()
+              : Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      "Next lowest period: ${_minPeriod?.prettyPrintPeriod()}",
+                    ),
+                    Text(
+                      "Lowest CI in that period: ${_minPeriod?.value.get()}",
+                    ),
+                  ],
+                ),
         ],
       ),
     );

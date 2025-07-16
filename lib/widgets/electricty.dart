@@ -46,6 +46,7 @@ class _ElectricityPricesPageState extends State<ElectricityPricesPage> {
   late ElectricityApiCaller _caller;
   late ElectricityPricesChartGeneratorFactory _chartGeneratorFactory;
   AdaptiveChartWidgetBuilder? _adaptiveChartWidgetBuilder;
+  PeriodData<Rate>? _minPeriod;
 
   @override
   void initState() {
@@ -58,6 +59,10 @@ class _ElectricityPricesPageState extends State<ElectricityPricesPage> {
       setState,
     );
     _setupProductsAndTariffs();
+    _refreshAsync();
+  }
+
+  void _refreshAsync() {
     _refreshElectricityPricesChart();
     _refreshCurrentPrice();
   }
@@ -88,8 +93,12 @@ class _ElectricityPricesPageState extends State<ElectricityPricesPage> {
     _chartGeneratorFactory.productCode = _productCode;
     _chartGeneratorFactory.tariffCode = _tariffCode;
     final generator = await _chartGeneratorFactory.getChartGenerator();
+    _caller.productCode = _productCode;
+    _caller.tariffCode = _tariffCode;
+    final minPeriod = await _caller.forecastMinimum();
     setState(() {
       _adaptiveChartWidgetBuilder = AdaptiveChartWidgetBuilder(generator);
+      _minPeriod = minPeriod;
     });
   }
 
@@ -153,10 +162,7 @@ class _ElectricityPricesPageState extends State<ElectricityPricesPage> {
                   TextButton(
                     style: style.simpleButtonStyle(),
                     child: Icon(Icons.refresh_rounded),
-                    onPressed: () {
-                      _refreshCurrentPrice();
-                      _refreshElectricityPricesChart();
-                    },
+                    onPressed: _refreshAsync,
                   ),
                 ],
               ),
@@ -169,6 +175,19 @@ class _ElectricityPricesPageState extends State<ElectricityPricesPage> {
                   ? SizedBox()
                   : LayoutBuilder(
                       builder: _adaptiveChartWidgetBuilder!.builder,
+                    ),
+              _minPeriod == null
+                  ? SizedBox()
+                  : Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          "Next lowest period: ${_minPeriod?.prettyPrintPeriod()}",
+                        ),
+                        Text(
+                          "Lowest price in that period: ${_minPeriod?.value.valueIncVat.toStringAsFixed(2)}",
+                        ),
+                      ],
                     ),
             ],
           ),
