@@ -77,17 +77,17 @@ class _CarbonIntensityPageState extends State<CarbonIntensityPage> {
   @override
   Widget build(BuildContext context) {
     return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            BigAnimatedCounter(count: _counter.toDouble()),
-            SizedBox(height: 40),
-            _adaptiveChartWidgetBuilder == null
-                ? SizedBox()
-                : LayoutBuilder(builder: _adaptiveChartWidgetBuilder!.builder),
-          ],
-        ),
-      );
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: <Widget>[
+          BigAnimatedCounter(count: _counter.toDouble()),
+          SizedBox(height: 40),
+          _adaptiveChartWidgetBuilder == null
+              ? SizedBox()
+              : LayoutBuilder(builder: _adaptiveChartWidgetBuilder!.builder),
+        ],
+      ),
+    );
   }
 }
 
@@ -103,48 +103,47 @@ class CarbonIntensityChartGeneratorFactory
   // Nuclear: ~12 gCO₂e/kWh
 
   CarbonIntensityChartGeneratorFactory.all(
-      this.caller,
-      {
-        required super.setStateFn,
-        required super.xAxisName,
-        required super.yAxisName,
-        required super.intervalHoursForLargeWidth,
-        required super.intervalHours,
-        required super.yInterval,
-        required super.maxPossibleY,
-        required super.yStops,
-        required super.fractionYStops,
-        required super.yColors,
-        required super.yGradient,
-        required super.maxY,
-        required super.minY,
-        required super.specificGradient,
-        super.textStyle = const TextStyle(
-          fontSize: 15,
-          fontWeight: FontWeight.bold,
-        ),
-      });
+    this.caller, {
+    required super.setStateFn,
+    required super.xAxisName,
+    required super.yAxisName,
+    required super.intervalHoursForLargeWidth,
+    required super.intervalHours,
+    required super.yInterval,
+    required super.maxPossibleY,
+    required super.yStops,
+    required super.fractionYStops,
+    required super.yColors,
+    required super.yGradient,
+    required super.maxY,
+    required super.minY,
+    required super.specificGradient,
+    super.textStyle = const TextStyle(
+      fontSize: 15,
+      fontWeight: FontWeight.bold,
+    ),
+  });
 
   CarbonIntensityChartGeneratorFactory(
-      CarbonIntensityCaller caller,
-      void Function(VoidCallback) setStateFn,
-      ) : this.all(
-    caller,
-    setStateFn: setStateFn,
-    yAxisName: "Carbon Intensity (gCO2/kWh)",
-    xAxisName: "Time",
-    intervalHoursForLargeWidth: 5,
-    intervalHours: 12,
-    yInterval: 25,
-    maxPossibleY: 500,
-    yStops: ChartGeneratorFactory.defaultStops,
-    fractionYStops: ChartGeneratorFactory.defaultFractionStops,
-    yColors: ChartGeneratorFactory.defaultColors,
-    yGradient: ChartGeneratorFactory.defaultGradient,
-    maxY: 500,
-    minY: 0,
-    specificGradient: ChartGeneratorFactory.defaultGradient,
-  );
+    CarbonIntensityCaller caller,
+    void Function(VoidCallback) setStateFn,
+  ) : this.all(
+        caller,
+        setStateFn: setStateFn,
+        yAxisName: "Carbon Intensity (gCO2/kWh)",
+        xAxisName: "Time",
+        intervalHoursForLargeWidth: 5,
+        intervalHours: 12,
+        yInterval: 25,
+        maxPossibleY: 500,
+        yStops: ChartGeneratorFactory.defaultStops,
+        fractionYStops: ChartGeneratorFactory.defaultFractionStops,
+        yColors: ChartGeneratorFactory.defaultColors,
+        yGradient: ChartGeneratorFactory.defaultGradient,
+        maxY: 500,
+        minY: 0,
+        specificGradient: ChartGeneratorFactory.defaultGradient,
+      );
 
   @override
   Future<LineChartData Function(BuildContext, DeviceSize)>
@@ -171,7 +170,7 @@ class CarbonIntensityChartGeneratorFactory
     };
   }
 
-  static int _getCurrentIntensityIndex(List<PeriodData> past) {
+  static int _getCurrentIntensityIndex(List<PeriodData<IntensityData>> past) {
     for (var i = past.length - 1; i >= 0; i--) {
       // return the latest valid actual point of data
       if (past[i].value.actual != null) {
@@ -187,14 +186,12 @@ class CarbonIntensityChartGeneratorFactory
     final double x =
         (period.from.toLocal().millisecondsSinceEpoch +
             period.to.toLocal().millisecondsSinceEpoch) /
-            2;
+        2;
     return FlSpot(x, y);
   }
 
   @override
-  List<FlSpot> convertToChartData(
-      List<PeriodData<IntensityData>> periods,
-      ) {
+  List<FlSpot> convertToChartData(List<PeriodData<IntensityData>> periods) {
     return periods.map(convertPeriodToSpot).toList();
   }
 }

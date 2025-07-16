@@ -1,10 +1,12 @@
+import 'package:electricity_prices_and_carbon_intensity/utilities/minimumForecaster.dart';
 import 'package:http/http.dart';
 import 'dart:convert';
 import 'package:intl/intl.dart';
 
 import 'httpclient.dart';
 
-class CarbonIntensityCaller extends ApiCaller {
+class CarbonIntensityCaller extends ApiCaller
+    with MinimumForecaster<IntensityData> {
   CarbonIntensityCaller() : super(_baseUrl);
 
   static const String _baseUrl = 'https://api.carbonintensity.org.uk/';
@@ -16,7 +18,7 @@ class CarbonIntensityCaller extends ApiCaller {
   );
 
   /// converts PeriodData period to an int value
-  static int convertToInt(PeriodData period) {
+  static int convertToInt(PeriodData<IntensityData> period) {
     final intensity = period.value;
     return intensity.actual ?? intensity.forecast ?? -1;
   }
@@ -40,8 +42,8 @@ class CarbonIntensityCaller extends ApiCaller {
 
   /// fetches carbon intensity data for a particular date
   Future<List<PeriodData<IntensityData>>> getIntensityForDate(
-      DateTime date,
-      ) async {
+    DateTime date,
+  ) async {
     final formattedDate = _dateFormatter.format(date);
     final response = await _get('$_intensity/date/$formattedDate/');
     return !isValidResponse(response)
@@ -86,6 +88,13 @@ class CarbonIntensityCaller extends ApiCaller {
     return !isValidResponse(response) ? [] : _parseIntensityAndTime(response);
   }
 
+  /// forecasts intensity 24 hrs into the future
+  @override
+  Future<List<PeriodData<IntensityData>>> forecast() async {
+    DateTime now = DateTime.now().toUtc();
+    return await getIntensityFrom(from: now, modifier: FromModifier.forward24);
+  }
+
   Future<Response> _get(String path) async {
     final url = Uri.parse('$_baseUrl$path');
     return await client.get(url);
@@ -111,12 +120,16 @@ class CarbonIntensityCaller extends ApiCaller {
 
 // ---------------- Data Classes ----------------
 
-class IntensityData {
+class IntensityData implements Comparable<IntensityData> {
   final int? forecast;
   final int? actual;
   final String? index;
 
   IntensityData({this.forecast, this.actual, this.index});
+
+  int get() {
+    return actual ?? forecast ?? -1;
+  }
 
   factory IntensityData.fromJson(Map<String, dynamic> json) {
     return IntensityData(
@@ -124,6 +137,35 @@ class IntensityData {
       actual: json['actual'],
       index: json['index'],
     );
+  }
+
+  @override
+  int compareTo(IntensityData other) {
+    return this.get().compareTo(other.get());
+  }
+
+  bool operator >(IntensityData other) {
+    return this.get() > other.get();
+  }
+
+  bool operator <(IntensityData other) {
+    return this.get() < other.get();
+  }
+
+  bool operator >=(IntensityData other) {
+    return this.get() >= other.get();
+  }
+
+  bool operator <=(IntensityData other) {
+    return this.get() <= other.get();
+  }
+
+  @override
+  bool operator ==(other) {
+    return other is IntensityData &&
+        this.actual == other.actual &&
+        this.forecast == other.forecast &&
+        this.index == other.index;
   }
 }
 

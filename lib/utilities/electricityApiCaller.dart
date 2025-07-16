@@ -1,4 +1,5 @@
 import 'package:electricity_prices_and_carbon_intensity/utilities/httpclient.dart';
+import 'package:electricity_prices_and_carbon_intensity/utilities/minimumForecaster.dart';
 import 'package:http/http.dart';
 import 'dart:convert';
 import 'package:intl/intl.dart';
@@ -6,7 +7,7 @@ import 'package:logger/logger.dart';
 
 var logger = Logger(filter: null, printer: PrettyPrinter(), output: null);
 
-class ElectricityApiCaller extends ApiCaller {
+class ElectricityApiCaller extends ApiCaller with MinimumForecaster<Rate> {
   static const String _baseUrl = "api.octopus.energy";
   static const String _apiPostFix = "v1/";
   static const String _apiKey = "";
@@ -27,7 +28,13 @@ class ElectricityApiCaller extends ApiCaller {
     "yyyy'-'MM'-'dd'T'HH':'mm':'ss'Z'",
   );
 
-  ElectricityApiCaller() : super(_baseUrl);
+  /// the product code that will be used on subsequent calls if none passed
+  String productCode;
+
+  /// the tariff code that will be used on subsequent calls if none passed
+  String tariffCode;
+
+  ElectricityApiCaller(this.productCode, this.tariffCode) : super(_baseUrl);
 
   Future<Response> _get(String endpoint, {Map<String, dynamic>? queryParams}) {
     return this.getHttps(
@@ -60,10 +67,11 @@ class ElectricityApiCaller extends ApiCaller {
   /// fetches the product information for the given code with tariffs
   ///
   /// tariffsActiveAt datetime should in the UTC timezone
-  Future<Product> getProductWithCode(
-    String code, {
+  Future<Product> getProductWithCode({
+    String? code,
     DateTime? tariffsActiveAt,
   }) async {
+    code = code ?? productCode;
     String endpoint = "$_products/$code/";
     Map<String, dynamic> queryParams = {};
     if (tariffsActiveAt != null) {
@@ -83,25 +91,39 @@ class ElectricityApiCaller extends ApiCaller {
   }
 
   /// fetches the current price for the given product and tariff code
-  Future<PeriodData<Rate>> getCurrentPrice(String productCode, String tariffCode) async {
-    List<PeriodData<Rate>> prices = await getTariffsFrom(productCode, tariffCode, DateTime.now().toUtc());
+  ///
+  /// If either code is null, will use as replacement instance fields productCode and tariffCode
+  Future<PeriodData<Rate>> getCurrentPrice({
+    String? productCode,
+    String? tariffCode,
+  }) async {
+    productCode = productCode ?? this.productCode;
+    tariffCode = tariffCode ?? this.tariffCode;
+    List<PeriodData<Rate>> prices = await getTariffsFrom(
+      productCode: productCode,
+      tariffCode: tariffCode,
+      DateTime.now().toUtc(),
+    );
     return prices.first;
   }
 
   /// fetches tariffs given product and tariff code inclusive from given date time from
   ///
+  /// If either code is null, will use as replacement instance fields productCode and tariffCode
   /// Can optionally pass a to date time that will return tariffs until that time (exclusive)
   /// Can optionally pass a RateType to rateType for type of rates fetched
   /// All date times must be in the UTC timezone
   Future<List<PeriodData<Rate>>> getTariffsFrom(
-    String product,
-    String tariffCode,
     DateTime from, {
+    String? productCode,
+    String? tariffCode,
     DateTime? to,
     RateType rateType = RateType.standardUnitRate,
   }) async {
+    productCode = productCode ?? this.productCode;
+    tariffCode = tariffCode ?? this.tariffCode;
     String endpoint =
-        "$_products/$product/$_electricityTariffString/$tariffCode/$rateType/";
+        "$_products/$productCode/$_electricityTariffString/$tariffCode/$rateType/";
     Map<String, dynamic> queryParams = <String, dynamic>{
       _periodFrom: from.toIso8601String(),
     };
@@ -114,10 +136,29 @@ class ElectricityApiCaller extends ApiCaller {
       return _parseRates(response);
     } else {
       throw Exception(
-        "Rates not found for product $product with tariff band $tariffCode from $from"
+        "Rates not found for product $productCode with tariff band $tariffCode from $from"
         "\nError: ${response.body}",
       );
     }
+  }
+
+  /// forecasts tariffs in the future
+  ///
+  /// instance members productCode and tariffCode will be used to fetch data
+  @override
+  Future<List<PeriodData<Rate>>> forecast() async {
+    DateTime now = DateTime.now().toUtc();
+    return await getTariffsFrom(now);
+  }
+
+  /// returns the least amount in the future
+  ///
+  /// instance members productCode and tariffCode will be used to fetch data
+  /// fetches the forecast data and then calls predictMinimumWith
+  @override
+  Future<PeriodData<Rate>> forecastMinimum() async {
+    List<PeriodData<Rate>> forecastData = await forecast();
+    return forecastMinimumWith(forecastData);
   }
 
   static List<Product> _parseProducts(Response response) {
@@ -200,6 +241,13 @@ class Tariff {
   final String paymentMethod;
 
   Tariff(this.name, this.code, this.paymentMethod);
+
+  bool operator ==(Object other) {
+    return other is Tariff &&
+        this.code == other.code &&
+        this.name == other.name &&
+        this.paymentMethod == other.paymentMethod;
+  }
 }
 
 enum RateType {
@@ -218,7 +266,7 @@ enum RateType {
   }
 }
 
-class Rate {
+class Rate implements Comparable<Rate> {
   final double valueExcVat;
   final double valueIncVat;
   final String? paymentMethod;
@@ -231,5 +279,33 @@ class Rate {
       jsonData['value_inc_vat'],
       jsonData['payment_method'],
     );
+  }
+
+  bool operator >(Rate other) {
+    return this.valueIncVat > other.valueIncVat;
+  }
+
+  bool operator <(Rate other) {
+    return this.valueIncVat < other.valueIncVat;
+  }
+
+  bool operator >=(Rate other) {
+    return this.valueIncVat >= other.valueIncVat;
+  }
+
+  bool operator <=(Rate other) {
+    return this.valueIncVat <= other.valueIncVat;
+  }
+
+  bool operator ==(Object other) {
+    return other is Rate &&
+        this.valueIncVat == other.valueIncVat &&
+        this.valueExcVat == other.valueExcVat &&
+        this.paymentMethod == other.paymentMethod;
+  }
+
+  @override
+  int compareTo(Rate other) {
+    return (this.valueIncVat - other.valueIncVat).compareTo(0);
   }
 }

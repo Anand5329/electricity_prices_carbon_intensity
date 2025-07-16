@@ -78,5 +78,14 @@ void main() {
       var periodsData = await client.getIntensityFrom(from: from, modifier: FromModifier.to, to: to);
       expect(periodsData.length, 6);
     });
+
+    test('forecast minimum', () async {
+      List<PeriodData<IntensityData>> forecast = await client.forecast();
+      PeriodData<IntensityData> min = await client.forecastMinimum();
+
+      for (PeriodData<IntensityData> moment in forecast) {
+        expect(moment >= min, true);
+      }
+    });
   });
 }
