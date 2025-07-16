@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 class StyleComponents {
-
   final ThemeData _theme;
 
   StyleComponents(this._theme);
@@ -14,7 +13,9 @@ class StyleComponents {
     return ButtonStyle(
       textStyle: WidgetStateProperty.all(_theme.textTheme.displaySmall),
       foregroundColor: WidgetStateProperty.all(_theme.colorScheme.primary),
-      backgroundColor: WidgetStateProperty.all(_theme.colorScheme.inversePrimary),
+      backgroundColor: WidgetStateProperty.all(
+        _theme.colorScheme.inversePrimary,
+      ),
     );
   }
 
@@ -26,9 +27,6 @@ class StyleComponents {
   }
 
   static Widget paddingWrapper(Widget inner) {
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: inner,
-    );
+    return Padding(padding: const EdgeInsets.all(8.0), child: inner);
   }
 }

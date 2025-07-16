@@ -1,5 +1,3 @@
-
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
@@ -20,7 +18,8 @@ class AnimatedCounter extends ImplicitlyAnimatedWidget {
   }) : super(duration: duration, curve: curve, key: key);
 
   @override
-  ImplicitlyAnimatedWidgetState<ImplicitlyAnimatedWidget> createState() => _AnimatedCounterState();
+  ImplicitlyAnimatedWidgetState<ImplicitlyAnimatedWidget> createState() =>
+      _AnimatedCounterState();
 
   static Widget _plainText(String text, ThemeData theme) {
     return Text(text, style: theme.textTheme.bodyMedium);
@@ -40,15 +39,23 @@ class _AnimatedCounterState extends AnimatedWidgetBaseState<AnimatedCounter> {
 
   @override
   Widget build(BuildContext context) {
-    return widget.textWrapper(widget.doublePrinter(_count.evaluate(animation)), Theme.of(context));
+    return widget.textWrapper(
+      widget.doublePrinter(_count.evaluate(animation)),
+      Theme.of(context),
+    );
   }
 
   @override
   void forEachTween(TweenVisitor<dynamic> visitor) {
-    _count = visitor(_count, widget.count, (dynamic value) => new Tween<double>(begin: value)) as Tween<dynamic>;
+    _count =
+        visitor(
+              _count,
+              widget.count,
+              (dynamic value) => new Tween<double>(begin: value),
+            )
+            as Tween<dynamic>;
   }
 }
-
 
 class BigAnimatedCounter extends AnimatedCounter {
   static const Duration ONE_SECOND = Duration(seconds: 1);
@@ -61,6 +68,8 @@ class BigAnimatedCounter extends AnimatedCounter {
   }) : super(duration: ONE_SECOND, textWrapper: _bigText);
 
   static Widget _bigText(String text, ThemeData theme) {
-    return StyleComponents.paddingWrapper(StyleComponents.headlineTextWrapper(text, theme));
+    return StyleComponents.paddingWrapper(
+      StyleComponents.headlineTextWrapper(text, theme),
+    );
   }
 }

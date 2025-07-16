@@ -37,8 +37,14 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   late final List<NavigationDestination> _destinations = [
-    NavigationDestination(icon: Icon(Icons.co2_sharp), label: "Carbon Intensity"),
-    NavigationDestination(icon: Icon(Icons.bolt_sharp), label: "Electricity Prices")
+    NavigationDestination(
+      icon: Icon(Icons.co2_sharp),
+      label: "Carbon Intensity",
+    ),
+    NavigationDestination(
+      icon: Icon(Icons.bolt_sharp),
+      label: "Electricity Prices",
+    ),
   ];
   late final List<NavigationRailDestination> _railDestinations;
   int _selectedIndex = 0;
@@ -48,7 +54,11 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   void initState() {
-    _railDestinations = _destinations.map((d) => NavigationRailDestination(icon: d.icon, label: Text(d.label))).toList();
+    _railDestinations = _destinations
+        .map(
+          (d) => NavigationRailDestination(icon: d.icon, label: Text(d.label)),
+        )
+        .toList();
   }
 
   void _onDestinationSelected(int index) {
@@ -87,19 +97,17 @@ class _MyHomePageState extends State<MyHomePage> {
                 body: Row(
                   children: [
                     SafeArea(
-                        child: NavigationRail(
-                            destinations: _railDestinations,
-                            onDestinationSelected: _onDestinationSelected,
-                            selectedIndex: _selectedIndex,
-                            extended: constraints.maxWidth > _largeWidthThreshold,
-                        )
+                      child: NavigationRail(
+                        destinations: _railDestinations,
+                        onDestinationSelected: _onDestinationSelected,
+                        selectedIndex: _selectedIndex,
+                        extended: constraints.maxWidth > _largeWidthThreshold,
+                      ),
                     ),
-                    Expanded(
-                        child: page
-                    )
+                    Expanded(child: page),
                   ],
-                )
-        );
+                ),
+              );
       },
     );
   }
