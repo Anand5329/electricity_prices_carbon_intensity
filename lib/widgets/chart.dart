@@ -442,3 +442,17 @@ class AdaptiveChartWidgetBuilder {
 }
 
 enum DeviceSize { small, large }
+
+extension PrettyDateTime on DateTime {
+  String prettyPrintTime() {
+    return DateFormat.jm().format(this);
+  }
+
+  String prettyPrintDate() {
+    return DateFormat.yMMMd().format(this);
+  }
+
+  String prettyPrintDateTime() {
+    return "${prettyPrintDate()} ${prettyPrintTime()}";
+  }
+}

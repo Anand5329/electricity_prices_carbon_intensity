@@ -1,3 +1,4 @@
+import 'package:electricity_prices_and_carbon_intensity/widgets/chart.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:http/http.dart';
 
@@ -60,5 +61,9 @@ class PeriodData<T extends Comparable<T>> implements Comparable<PeriodData<T>> {
   @override
   int compareTo(PeriodData<T> other) {
     return this.value.compareTo(other.value);
+  }
+
+  String prettyPrintPeriod() {
+    return "${from.toLocal().prettyPrintDateTime()} - ${to.toLocal().prettyPrintTime()}";
   }
 }
