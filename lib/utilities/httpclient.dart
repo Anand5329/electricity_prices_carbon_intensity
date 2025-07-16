@@ -24,8 +24,7 @@ class ApiCaller {
   }
 }
 
-
-class PeriodData<T> {
+class PeriodData<T extends Comparable<T>> implements Comparable<PeriodData<T>> {
   final DateTime from;
   final DateTime to;
   final T value;
@@ -33,5 +32,33 @@ class PeriodData<T> {
   PeriodData.raw(this.from, this.to, this.value);
 
   PeriodData({required String from, required String to, required T value})
-      : this.raw(DateTime.parse(from), DateTime.parse(to), value);
+    : this.raw(DateTime.parse(from), DateTime.parse(to), value);
+
+  bool operator ==(Object other) {
+    return other is PeriodData<T> &&
+        this.value == other.value &&
+        this.from == other.from &&
+        this.to == other.to;
+  }
+
+  bool operator >(PeriodData<T> other) {
+    return this.value.compareTo(other.value) > 0;
+  }
+
+  bool operator <(PeriodData<T> other) {
+    return this.value.compareTo(other.value) < 0;
+  }
+
+  bool operator >=(PeriodData<T> other) {
+    return this.value.compareTo(other.value) >= 0;
+  }
+
+  bool operator <=(PeriodData<T> other) {
+    return this.value.compareTo(other.value) <= 0;
+  }
+
+  @override
+  int compareTo(PeriodData<T> other) {
+    return this.value.compareTo(other.value);
+  }
 }

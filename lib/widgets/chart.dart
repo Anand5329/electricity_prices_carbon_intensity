@@ -6,7 +6,7 @@ import 'package:logger/logger.dart';
 
 var logger = Logger(filter: null, printer: PrettyPrinter(), output: null);
 
-abstract class ChartGeneratorFactory<T> {
+abstract class ChartGeneratorFactory<T extends Comparable<T>> {
   double minY;
   double maxY;
   final double maxPossibleY;
@@ -96,11 +96,7 @@ abstract class ChartGeneratorFactory<T> {
       backgroundColor: backgroundColor,
       showingTooltipIndicators: [
         ShowingTooltipIndicators([
-          LineBarSpot(
-            lineChartBar,
-            0,
-            lineChartBar.spots[currentSpotIndex],
-          ),
+          LineBarSpot(lineChartBar, 0, lineChartBar.spots[currentSpotIndex]),
         ]),
       ],
     );
@@ -277,9 +273,7 @@ abstract class ChartGeneratorFactory<T> {
     }).toList();
   }
 
-  List<LineTooltipItem?> _yAndXTimeTooltipItems(
-    List<LineBarSpot> spots,
-  ) {
+  List<LineTooltipItem?> _yAndXTimeTooltipItems(List<LineBarSpot> spots) {
     return spots
         .map(
           (spot) => LineTooltipItem(
