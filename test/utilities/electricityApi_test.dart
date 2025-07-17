@@ -2,7 +2,7 @@ import 'package:electricity_prices_and_carbon_intensity/utilities/httpclient.dar
 import 'package:electricity_prices_and_carbon_intensity/widgets/electricty.dart';
 import 'package:test/test.dart';
 import 'package:electricity_prices_and_carbon_intensity/utilities/electricityApiCaller.dart';
-
+// TODO: Add CI pipeline for testing and formatting.
 void main() {
   final client = ElectricityApiCaller(
     ElectricityPricesPage.defaultProductCode,
