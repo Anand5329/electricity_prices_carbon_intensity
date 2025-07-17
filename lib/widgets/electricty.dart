@@ -170,22 +170,25 @@ class _ElectricityPricesPageState extends State<ElectricityPricesPage> {
                 count: _currentPrice,
                 doublePrinter: AnimatedCounter.toNDecimalPlaces(2),
               ),
-              SizedBox(height: 40),
+              SizedBox(height: 20),
               _adaptiveChartWidgetBuilder == null
                   ? SizedBox()
                   : LayoutBuilder(
                       builder: _adaptiveChartWidgetBuilder!.builder,
                     ),
+              SizedBox(height: 20),
               _minPeriod == null
                   ? SizedBox()
                   : Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          "Next lowest period: ${_minPeriod?.prettyPrintPeriod()}",
+                          "Next lowest:",
                         ),
+                        Text(_minPeriod!.prettyPrintPeriod(), style: StyleComponents.smallText),
                         Text(
-                          "Lowest price in that period: ${_minPeriod?.value.valueIncVat.toStringAsFixed(2)}",
+                            "${_minPeriod?.value} ${ElectricityPricesChartGeneratorFactory.unit}",
+                            style: StyleComponents.smallText
                         ),
                       ],
                     ),
@@ -199,6 +202,8 @@ class _ElectricityPricesPageState extends State<ElectricityPricesPage> {
 
 class ElectricityPricesChartGeneratorFactory
     extends ChartGeneratorFactory<Rate> {
+  static const String unit = "p/kWh";
+
   final ElectricityApiCaller _caller;
   String productCode;
   String tariffCode;
@@ -247,7 +252,7 @@ class ElectricityPricesChartGeneratorFactory
         tariffCode,
         setStateFn: setState,
         xAxisName: "Time",
-        yAxisName: "Price (p/kWh)",
+        yAxisName: "Price ($unit)",
         intervalHoursForLargeWidth: 5,
         intervalHours: 12,
         maxPossibleY: 100,

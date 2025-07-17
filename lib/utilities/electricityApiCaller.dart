@@ -305,6 +305,11 @@ class Rate implements Comparable<Rate> {
   }
 
   @override
+  String toString() {
+    return valueIncVat.toStringAsFixed(2);
+  }
+
+  @override
   int compareTo(Rate other) {
     return (this.valueIncVat - other.valueIncVat).compareTo(0);
   }

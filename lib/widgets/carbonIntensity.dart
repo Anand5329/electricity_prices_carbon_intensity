@@ -88,16 +88,19 @@ class _CarbonIntensityPageState extends State<CarbonIntensityPage> {
           _adaptiveChartWidgetBuilder == null
               ? SizedBox()
               : LayoutBuilder(builder: _adaptiveChartWidgetBuilder!.builder),
+          SizedBox(height: 20),
           _minPeriod == null
               ? SizedBox()
               : Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      "Next lowest period: ${_minPeriod?.prettyPrintPeriod()}",
+                      "Next lowest:",
                     ),
+                    Text(_minPeriod!.prettyPrintPeriod(), style: StyleComponents.smallText),
                     Text(
-                      "Lowest CI in that period: ${_minPeriod?.value.get()}",
+                      "${_minPeriod?.value.get()} ${CarbonIntensityChartGeneratorFactory.unit}",
+                        style: StyleComponents.smallText
                     ),
                   ],
                 ),
@@ -109,6 +112,8 @@ class _CarbonIntensityPageState extends State<CarbonIntensityPage> {
 
 class CarbonIntensityChartGeneratorFactory
     extends ChartGeneratorFactory<IntensityData> {
+  static const String unit = "gCO2/kWh";
+
   final CarbonIntensityCaller caller;
 
   // Carbon intensity by source:
@@ -134,10 +139,7 @@ class CarbonIntensityChartGeneratorFactory
     required super.maxY,
     required super.minY,
     required super.specificGradient,
-    super.textStyle = const TextStyle(
-      fontSize: 15,
-      fontWeight: FontWeight.bold,
-    ),
+    super.textStyle = StyleComponents.smallText,
   });
 
   CarbonIntensityChartGeneratorFactory(
@@ -146,7 +148,7 @@ class CarbonIntensityChartGeneratorFactory
   ) : this.all(
         caller,
         setStateFn: setStateFn,
-        yAxisName: "Carbon Intensity (gCO2/kWh)",
+        yAxisName: "Carbon Intensity ($unit)",
         xAxisName: "Time",
         intervalHoursForLargeWidth: 5,
         intervalHours: 12,
