@@ -5,7 +5,7 @@ class NativeAdapter {
   const NativeAdapter();
 
   static const platform = MethodChannel('carbon_intensity');
-  
+
   static Future<int> updateCarbonIntensity() async {
     try {
       final int result = await platform.invokeMethod("getCarbonIntensity");
