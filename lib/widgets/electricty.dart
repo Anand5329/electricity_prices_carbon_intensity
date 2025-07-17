@@ -182,13 +182,14 @@ class _ElectricityPricesPageState extends State<ElectricityPricesPage> {
                   : Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
+                        Text("Next lowest:"),
                         Text(
-                          "Next lowest:",
+                          _minPeriod!.prettyPrintPeriod(),
+                          style: StyleComponents.smallText,
                         ),
-                        Text(_minPeriod!.prettyPrintPeriod(), style: StyleComponents.smallText),
                         Text(
-                            "${_minPeriod?.value} ${ElectricityPricesChartGeneratorFactory.unit}",
-                            style: StyleComponents.smallText
+                          "${_minPeriod?.value} ${ElectricityPricesChartGeneratorFactory.unit}",
+                          style: StyleComponents.smallText,
                         ),
                       ],
                     ),

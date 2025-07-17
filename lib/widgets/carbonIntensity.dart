@@ -94,13 +94,14 @@ class _CarbonIntensityPageState extends State<CarbonIntensityPage> {
               : Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
+                    Text("Next lowest:"),
                     Text(
-                      "Next lowest:",
+                      _minPeriod!.prettyPrintPeriod(),
+                      style: StyleComponents.smallText,
                     ),
-                    Text(_minPeriod!.prettyPrintPeriod(), style: StyleComponents.smallText),
                     Text(
                       "${_minPeriod?.value.get()} ${CarbonIntensityChartGeneratorFactory.unit}",
-                        style: StyleComponents.smallText
+                      style: StyleComponents.smallText,
                     ),
                   ],
                 ),

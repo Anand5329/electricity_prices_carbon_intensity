@@ -2,10 +2,9 @@ import 'package:flutter/material.dart';
 
 class StyleComponents {
   static const TextStyle smallText = const TextStyle(
-  fontSize: 15,
-  fontWeight: FontWeight.bold,
+    fontSize: 15,
+    fontWeight: FontWeight.bold,
   );
-
 
   final ThemeData _theme;
 

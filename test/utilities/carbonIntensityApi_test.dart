@@ -41,41 +41,90 @@ void main() {
 
     test('get intensity forward 24h', () async {
       final datetime = DateTime(2023, 3, 9, 16, 20);
-      var periodsData = await client.getIntensityFrom(from: datetime, modifier: FromModifier.forward24);
+      var periodsData = await client.getIntensityFrom(
+        from: datetime,
+        modifier: FromModifier.forward24,
+      );
       expect(periodsData.length, 48);
       var startDate = periodsData.first.to;
       var endDate = periodsData.last.to;
-      expect(startDate.isBefore(endDate), true, reason: "$startDate before $endDate");
-      expect(datetime.isBefore(startDate), true, reason: "$datetime before $startDate");
-      expect(endDate.subtract(Duration(hours: 23, minutes: 30)), startDate, reason: "$startDate is about one day before $endDate");
+      expect(
+        startDate.isBefore(endDate),
+        true,
+        reason: "$startDate before $endDate",
+      );
+      expect(
+        datetime.isBefore(startDate),
+        true,
+        reason: "$datetime before $startDate",
+      );
+      expect(
+        endDate.subtract(Duration(hours: 23, minutes: 30)),
+        startDate,
+        reason: "$startDate is about one day before $endDate",
+      );
     });
 
     test('get intensity forward 48h', () async {
       final datetime = DateTime(2023, 3, 9, 16, 20);
-      var periodsData = await client.getIntensityFrom(from: datetime, modifier: FromModifier.forward48);
+      var periodsData = await client.getIntensityFrom(
+        from: datetime,
+        modifier: FromModifier.forward48,
+      );
       expect(periodsData.length, 96);
       var startDate = periodsData.first.to;
       var endDate = periodsData.last.to;
-      expect(startDate.isBefore(endDate), true, reason: "$startDate before $endDate");
-      expect(datetime.isBefore(startDate), true, reason: "$datetime before $startDate");
-      expect(endDate.subtract(Duration(hours: 47, minutes: 30)), startDate, reason: "$startDate is about one day before $endDate");
+      expect(
+        startDate.isBefore(endDate),
+        true,
+        reason: "$startDate before $endDate",
+      );
+      expect(
+        datetime.isBefore(startDate),
+        true,
+        reason: "$datetime before $startDate",
+      );
+      expect(
+        endDate.subtract(Duration(hours: 47, minutes: 30)),
+        startDate,
+        reason: "$startDate is about one day before $endDate",
+      );
     });
 
     test('get intensity past 24h', () async {
       final datetime = DateTime(2023, 3, 9, 16, 20);
-      var periodsData = await client.getIntensityFrom(from: datetime, modifier: FromModifier.past24);
+      var periodsData = await client.getIntensityFrom(
+        from: datetime,
+        modifier: FromModifier.past24,
+      );
       expect(periodsData.length, 48);
       var startDate = periodsData.first.from;
       var endDate = periodsData.last.from;
-      expect(startDate.isBefore(endDate), true, reason: "$startDate before $endDate");
-      expect(startDate.isBefore(datetime), true, reason: "$startDate before $datetime");
-      expect(endDate.subtract(Duration(hours: 23, minutes: 30)), startDate, reason: "$startDate is about one day before $endDate");
+      expect(
+        startDate.isBefore(endDate),
+        true,
+        reason: "$startDate before $endDate",
+      );
+      expect(
+        startDate.isBefore(datetime),
+        true,
+        reason: "$startDate before $datetime",
+      );
+      expect(
+        endDate.subtract(Duration(hours: 23, minutes: 30)),
+        startDate,
+        reason: "$startDate is about one day before $endDate",
+      );
     });
 
     test('get intensity from date to date', () async {
       final from = DateTime(2023, 3, 9, 16, 20);
       final to = DateTime(2023, 3, 9, 19, 20);
-      var periodsData = await client.getIntensityFrom(from: from, modifier: FromModifier.to, to: to);
+      var periodsData = await client.getIntensityFrom(
+        from: from,
+        modifier: FromModifier.to,
+        to: to,
+      );
       expect(periodsData.length, 6);
     });
 
