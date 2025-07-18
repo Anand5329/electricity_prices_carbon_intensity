@@ -18,11 +18,23 @@ class CarbonIntensityPage extends StatefulWidget {
 }
 
 class _CarbonIntensityPageState extends State<CarbonIntensityPage> {
+  static const String defaultPostcode = "N1";
+
   late int _counter = 0;
-  final _caller = CarbonIntensityCaller();
+  final _caller = RegionalCarbonIntensityCaller();
   late CarbonIntensityChartGeneratorFactory _chartGeneratorFactory;
+  late RegionalCarbonIntensityChartGeneratorFactory
+  _regionalChartGeneratorFactory;
   AdaptiveChartWidgetBuilder? _adaptiveChartWidgetBuilder;
   PeriodData<IntensityData>? _minPeriod;
+
+  final _postcodeController = TextEditingController();
+
+  @override
+  void dispose() {
+    _postcodeController.dispose();
+    super.dispose();
+  }
 
   void _resetCounter() {
     setState(() {
@@ -30,10 +42,25 @@ class _CarbonIntensityPageState extends State<CarbonIntensityPage> {
     });
   }
 
+  void _fetchPostcode() {
+    String text = _postcodeController.text;
+    if (text.length == 0) {
+      text = defaultPostcode;
+      setState(() {
+        _postcodeController.text = defaultPostcode;
+      });
+    }
+    _caller.postcode = _postcodeController.text;
+  }
+
   Future<int> _getCarbonIntensity() async {
     try {
       // return await NativeAdapter.updateCarbonIntensity();
-      final intensity = await _caller.getCurrentIntensity();
+      // final intensity = await _caller.getCurrentIntensity();
+      _fetchPostcode();
+      final intensity = await _caller.getCurrentIntensityForPostcode(
+        _caller.postcode!,
+      );
       return CarbonIntensityCaller.convertToInt(intensity);
     } on Exception catch (e) {
       logger.e(e.toString());
@@ -58,7 +85,10 @@ class _CarbonIntensityPageState extends State<CarbonIntensityPage> {
   }
 
   Future<void> _refreshChartData() async {
-    final _chartGenerator = await _chartGeneratorFactory.getChartGenerator();
+    // final _chartGenerator = await _chartGeneratorFactory.getChartGenerator();
+    _fetchPostcode();
+    final _chartGenerator = await _regionalChartGeneratorFactory
+        .getChartGenerator();
     final minPeriod = await _caller.forecastMinimum();
     setState(() {
       _adaptiveChartWidgetBuilder = AdaptiveChartWidgetBuilder(_chartGenerator);
@@ -73,18 +103,48 @@ class _CarbonIntensityPageState extends State<CarbonIntensityPage> {
       _caller,
       setState,
     );
+    _regionalChartGeneratorFactory =
+        RegionalCarbonIntensityChartGeneratorFactory(_caller, setState);
     _refreshCarbonIntensity();
     _refreshChartData();
   }
 
+  void _refreshAsync() {
+    _refreshCarbonIntensity();
+    _refreshChartData();
+  }
+
+  // TODO: make it fit visually
   @override
   Widget build(BuildContext context) {
+    final style = StyleComponents(Theme.of(context));
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Expanded(
+                child: StyleComponents.paddingWrapper(
+                  TextField(
+                    decoration: InputDecoration(
+                      hintText: 'Enter an outer postcode (e.g. NW5)',
+                    ),
+                    controller: _postcodeController,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 24),
+              TextButton(
+                style: style.simpleButtonStyle(),
+                child: Icon(Icons.refresh_rounded),
+                onPressed: _refreshAsync,
+              ),
+            ],
+          ),
           BigAnimatedCounter(count: _counter.toDouble()),
-          SizedBox(height: 40),
+          SizedBox(height: 20),
           _adaptiveChartWidgetBuilder == null
               ? SizedBox()
               : LayoutBuilder(builder: _adaptiveChartWidgetBuilder!.builder),
@@ -212,5 +272,59 @@ class CarbonIntensityChartGeneratorFactory
   @override
   List<FlSpot> convertToChartData(List<PeriodData<IntensityData>> periods) {
     return periods.map(convertPeriodToSpot).toList();
+  }
+}
+
+class RegionalCarbonIntensityChartGeneratorFactory
+    extends CarbonIntensityChartGeneratorFactory {
+  final RegionalCarbonIntensityCaller caller;
+  final void Function(VoidCallback) setStateFn;
+
+  RegionalCarbonIntensityChartGeneratorFactory(this.caller, this.setStateFn)
+    : super(caller, setStateFn);
+
+  /// ensure postcode is set in caller before calling
+  @override
+  Future<LineChartData Function(BuildContext p1, DeviceSize p2)>
+  getChartGenerator() async {
+    DateTime today = DateTime.now().toUtc();
+    List<RegionalIntensityData> pastData = await this.caller
+        .getRegionalDataForPostcodeFrom(
+          caller.postcode!,
+          from: today,
+          modifier: FromModifier.past24,
+        );
+    List<PeriodData<IntensityData>> past = pastData.first.intensityData;
+    List<RegionalIntensityData> futureData = await this.caller
+        .getRegionalDataForPostcodeFrom(
+          caller.postcode!,
+          from: today,
+          modifier: FromModifier.forward24,
+        );
+    List<PeriodData<IntensityData>> future = futureData.first.intensityData;
+
+    int currentIntensityIndex = _getCurrentIntensityIndex(past);
+
+    List<PeriodData<IntensityData>> all = List.from(past);
+    all.addAll(future);
+
+    List<FlSpot> spots = convertToChartData(all);
+
+    return (BuildContext context, DeviceSize size) {
+      this.backgroundColor = Theme.of(context).colorScheme.surface;
+      return getChartData(spots, currentIntensityIndex, size);
+    };
+  }
+
+  static int _getCurrentIntensityIndex(List<PeriodData<IntensityData>> past) {
+    // TODO: make this inline with getCurrentIntensity
+    DateTime now = DateTime.now().toUtc();
+
+    for (var i = 0; i < past.length; i++) {
+      if (past[i].from.isBefore(now) && past[i].to.isAfter(now)) {
+        return i;
+      }
+    }
+    return past.length - 1;
   }
 }
