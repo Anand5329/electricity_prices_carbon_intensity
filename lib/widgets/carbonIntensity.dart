@@ -114,58 +114,61 @@ class _CarbonIntensityPageState extends State<CarbonIntensityPage> {
     _refreshChartData();
   }
 
-  // TODO: make it fit visually
   @override
   Widget build(BuildContext context) {
     final style = StyleComponents(Theme.of(context));
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: <Widget>[
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Expanded(
-                child: StyleComponents.paddingWrapper(
-                  TextField(
-                    decoration: InputDecoration(
-                      hintText: 'Enter an outer postcode (e.g. NW5)',
+    return SingleChildScrollView(
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            const SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: StyleComponents.paddingWrapper(
+                    TextField(
+                      decoration: InputDecoration(
+                        hintText: 'Enter an outer postcode (e.g. NW5)',
+                      ),
+                      controller: _postcodeController,
                     ),
-                    controller: _postcodeController,
                   ),
                 ),
-              ),
-              const SizedBox(width: 24),
-              TextButton(
-                style: style.simpleButtonStyle(),
-                child: Icon(Icons.refresh_rounded),
-                onPressed: _refreshAsync,
-              ),
-            ],
-          ),
-          BigAnimatedCounter(count: _counter.toDouble()),
-          SizedBox(height: 20),
-          _adaptiveChartWidgetBuilder == null
-              ? SizedBox()
-              : LayoutBuilder(builder: _adaptiveChartWidgetBuilder!.builder),
-          SizedBox(height: 20),
-          _minPeriod == null
-              ? SizedBox()
-              : Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text("Next lowest:"),
-                    Text(
-                      _minPeriod!.prettyPrintPeriod(),
-                      style: StyleComponents.smallText,
-                    ),
-                    Text(
-                      "${_minPeriod?.value.get()} ${CarbonIntensityChartGeneratorFactory.unit}",
-                      style: StyleComponents.smallText,
-                    ),
-                  ],
+                const SizedBox(width: 24),
+                TextButton(
+                  style: style.simpleButtonStyle(),
+                  child: Icon(Icons.refresh_rounded),
+                  onPressed: _refreshAsync,
                 ),
-        ],
+              ],
+            ),
+            BigAnimatedCounter(count: _counter.toDouble()),
+            SizedBox(height: 40),
+            _adaptiveChartWidgetBuilder == null
+                ? SizedBox()
+                : LayoutBuilder(builder: _adaptiveChartWidgetBuilder!.builder),
+            SizedBox(height: 20),
+            _minPeriod == null
+                ? SizedBox()
+                : Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text("Next lowest:"),
+                      Text(
+                        _minPeriod!.prettyPrintPeriod(),
+                        style: StyleComponents.smallText,
+                      ),
+                      Text(
+                        "${_minPeriod?.value.get()} ${CarbonIntensityChartGeneratorFactory.unit}",
+                        style: StyleComponents.smallText,
+                      ),
+                      SizedBox(height: 20),
+                    ],
+                  ),
+          ],
+        ),
       ),
     );
   }

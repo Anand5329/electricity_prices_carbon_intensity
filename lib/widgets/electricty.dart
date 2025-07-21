@@ -107,93 +107,95 @@ class _ElectricityPricesPageState extends State<ElectricityPricesPage> {
     StyleComponents style = StyleComponents(Theme.of(context));
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints constraints) {
-        return Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  DropdownMenu<Product>(
-                    width: constraints.maxWidth > _widthThreshold
-                        ? null
-                        : _menuWidth,
-                    initialSelection: defaultProduct,
-                    dropdownMenuEntries: _productList
-                        .map(
-                          (product) => DropdownMenuEntry(
-                            value: product,
-                            label: product.name,
-                          ),
-                        )
-                        .toList(),
-                    onSelected: (Product? product) {
-                      _productCode =
-                          product?.code ??
-                          ElectricityPricesPage.defaultProductCode;
-                      _refreshTariffCodeList();
-                    },
-                    requestFocusOnTap: true,
-                    label: const Text("Product"),
-                  ),
-                  const SizedBox(width: 40),
-                  DropdownMenu<Tariff>(
-                    width: constraints.maxWidth > _widthThreshold
-                        ? null
-                        : _menuWidth,
-                    initialSelection: defaultTariff,
-                    dropdownMenuEntries: _tariffList
-                        .map(
-                          (tariff) => DropdownMenuEntry(
-                            value: tariff,
-                            label: tariff.name,
-                          ),
-                        )
-                        .toList(),
-                    onSelected: (Tariff? tariff) {
-                      _tariffCode =
-                          tariff?.code ??
-                          ElectricityPricesPage.defaultTariffCode;
-                    },
-                    requestFocusOnTap: true,
-                    label: const Text("Tariff"),
-                  ),
-                  const SizedBox(width: 24),
-                  TextButton(
-                    style: style.simpleButtonStyle(),
-                    child: Icon(Icons.refresh_rounded),
-                    onPressed: _refreshAsync,
-                  ),
-                ],
-              ),
-              BigAnimatedCounter(
-                count: _currentPrice,
-                doublePrinter: AnimatedCounter.toNDecimalPlaces(2),
-              ),
-              SizedBox(height: 20),
-              _adaptiveChartWidgetBuilder == null
-                  ? SizedBox()
-                  : LayoutBuilder(
-                      builder: _adaptiveChartWidgetBuilder!.builder,
+        return SingleChildScrollView(
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    DropdownMenu<Product>(
+                      width: constraints.maxWidth > _widthThreshold
+                          ? null
+                          : _menuWidth,
+                      initialSelection: defaultProduct,
+                      dropdownMenuEntries: _productList
+                          .map(
+                            (product) => DropdownMenuEntry(
+                              value: product,
+                              label: product.name,
+                            ),
+                          )
+                          .toList(),
+                      onSelected: (Product? product) {
+                        _productCode =
+                            product?.code ??
+                            ElectricityPricesPage.defaultProductCode;
+                        _refreshTariffCodeList();
+                      },
+                      requestFocusOnTap: true,
+                      label: const Text("Product"),
                     ),
-              SizedBox(height: 20),
-              _minPeriod == null
-                  ? SizedBox()
-                  : Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text("Next lowest:"),
-                        Text(
-                          _minPeriod!.prettyPrintPeriod(),
-                          style: StyleComponents.smallText,
-                        ),
-                        Text(
-                          "${_minPeriod?.value} ${ElectricityPricesChartGeneratorFactory.unit}",
-                          style: StyleComponents.smallText,
-                        ),
-                      ],
+                    const SizedBox(width: 40),
+                    DropdownMenu<Tariff>(
+                      width: constraints.maxWidth > _widthThreshold
+                          ? null
+                          : _menuWidth,
+                      initialSelection: defaultTariff,
+                      dropdownMenuEntries: _tariffList
+                          .map(
+                            (tariff) => DropdownMenuEntry(
+                              value: tariff,
+                              label: tariff.name,
+                            ),
+                          )
+                          .toList(),
+                      onSelected: (Tariff? tariff) {
+                        _tariffCode =
+                            tariff?.code ??
+                            ElectricityPricesPage.defaultTariffCode;
+                      },
+                      requestFocusOnTap: true,
+                      label: const Text("Tariff"),
                     ),
-            ],
+                    const SizedBox(width: 24),
+                    TextButton(
+                      style: style.simpleButtonStyle(),
+                      child: Icon(Icons.refresh_rounded),
+                      onPressed: _refreshAsync,
+                    ),
+                  ],
+                ),
+                BigAnimatedCounter(
+                  count: _currentPrice,
+                  doublePrinter: AnimatedCounter.toNDecimalPlaces(2),
+                ),
+                SizedBox(height: 20),
+                _adaptiveChartWidgetBuilder == null
+                    ? SizedBox()
+                    : LayoutBuilder(
+                        builder: _adaptiveChartWidgetBuilder!.builder,
+                      ),
+                SizedBox(height: 20),
+                _minPeriod == null
+                    ? SizedBox()
+                    : Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text("Next lowest:"),
+                          Text(
+                            _minPeriod!.prettyPrintPeriod(),
+                            style: StyleComponents.smallText,
+                          ),
+                          Text(
+                            "${_minPeriod?.value} ${ElectricityPricesChartGeneratorFactory.unit}",
+                            style: StyleComponents.smallText,
+                          ),
+                        ],
+                      ),
+              ],
+            ),
           ),
         );
       },
