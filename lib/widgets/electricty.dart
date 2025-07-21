@@ -112,6 +112,7 @@ class _ElectricityPricesPageState extends State<ElectricityPricesPage> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: <Widget>[
+                const SizedBox(height: 40),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
