@@ -47,11 +47,9 @@ class _CarbonIntensityPageState extends State<CarbonIntensityPage> {
     ci = await _getCarbonIntensity();
 
     if (ci != -1) {
-      for (int i = 0; i <= ci; i++) {
-        setState(() {
-          _counter = i;
-        });
-      }
+      setState(() {
+        _counter = ci;
+      });
     } else {
       logger.e("Could not fetch latest CI");
     }
