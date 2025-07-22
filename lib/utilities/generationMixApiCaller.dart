@@ -101,6 +101,11 @@ enum EnergySource {
       return EnergySource.other;
     });
   }
+
+  @override
+  String toString() {
+    return _type;
+  }
 }
 
 /// to store each generation factor within the generation mix
@@ -139,7 +144,7 @@ class GenerationFactor {
 class GenerationMix implements Comparable<GenerationMix> {
   final List<GenerationFactor> factors;
 
-  GenerationMix({required this.factors});
+  const GenerationMix({required this.factors});
 
   factory GenerationMix.fromJson(Map<String, dynamic> json) {
     List<dynamic> factors = json["generationmix"];
@@ -154,4 +159,16 @@ class GenerationMix implements Comparable<GenerationMix> {
   int compareTo(GenerationMix other) {
     return this.factors.length - other.factors.length;
   }
+
+  Map<EnergySource, double> toMap() {
+    return Map.fromEntries(
+      factors.map((factor) => MapEntry(factor.energySource, factor.perc)),
+    );
+  }
+
+  static final GenerationMix uniform = GenerationMix(
+    factors: EnergySource.values
+        .map((src) => GenerationFactor(src, 100 / EnergySource.values.length))
+        .toList(),
+  );
 }
