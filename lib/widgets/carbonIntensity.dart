@@ -90,19 +90,19 @@ class _CarbonIntensityPageState extends State<CarbonIntensityPage> {
           _minPeriod == null
               ? SizedBox()
               : Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text("Next lowest:"),
-              Text(
-                _minPeriod!.prettyPrintPeriod(),
-                style: StyleComponents.smallText,
-              ),
-              Text(
-                "${_minPeriod?.value.get()} ${CarbonIntensityChartGeneratorFactory.unit}",
-                style: StyleComponents.smallText,
-              ),
-            ],
-          ),
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text("Next lowest:"),
+                    Text(
+                      _minPeriod!.prettyPrintPeriod(),
+                      style: StyleComponents.smallText,
+                    ),
+                    Text(
+                      "${_minPeriod?.value.get()} ${CarbonIntensityChartGeneratorFactory.unit}",
+                      style: StyleComponents.smallText,
+                    ),
+                  ],
+                ),
         ],
       ),
     );
@@ -123,44 +123,44 @@ class CarbonIntensityChartGeneratorFactory
   // Nuclear: ~12 gCO₂e/kWh
 
   CarbonIntensityChartGeneratorFactory.all(
-      this.caller, {
-        required super.setStateFn,
-        required super.xAxisName,
-        required super.yAxisName,
-        required super.intervalHoursForLargeWidth,
-        required super.intervalHours,
-        required super.yInterval,
-        required super.maxPossibleY,
-        required super.yStops,
-        required super.fractionYStops,
-        required super.yColors,
-        required super.yGradient,
-        required super.maxY,
-        required super.minY,
-        required super.specificGradient,
-        super.textStyle = StyleComponents.smallText,
-      });
+    this.caller, {
+    required super.setStateFn,
+    required super.xAxisName,
+    required super.yAxisName,
+    required super.intervalHoursForLargeWidth,
+    required super.intervalHours,
+    required super.yInterval,
+    required super.maxPossibleY,
+    required super.yStops,
+    required super.fractionYStops,
+    required super.yColors,
+    required super.yGradient,
+    required super.maxY,
+    required super.minY,
+    required super.specificGradient,
+    super.textStyle = StyleComponents.smallText,
+  });
 
   CarbonIntensityChartGeneratorFactory(
-      CarbonIntensityCaller caller,
-      void Function(VoidCallback) setStateFn,
-      ) : this.all(
-    caller,
-    setStateFn: setStateFn,
-    yAxisName: "Carbon Intensity ($unit)",
-    xAxisName: "Time",
-    intervalHoursForLargeWidth: 5,
-    intervalHours: 12,
-    yInterval: 25,
-    maxPossibleY: 500,
-    yStops: ChartGeneratorFactory.defaultStops,
-    fractionYStops: ChartGeneratorFactory.defaultFractionStops,
-    yColors: ChartGeneratorFactory.defaultColors,
-    yGradient: ChartGeneratorFactory.defaultGradient,
-    maxY: 500,
-    minY: 0,
-    specificGradient: ChartGeneratorFactory.defaultGradient,
-  );
+    CarbonIntensityCaller caller,
+    void Function(VoidCallback) setStateFn,
+  ) : this.all(
+        caller,
+        setStateFn: setStateFn,
+        yAxisName: "Carbon Intensity ($unit)",
+        xAxisName: "Time",
+        intervalHoursForLargeWidth: 5,
+        intervalHours: 12,
+        yInterval: 25,
+        maxPossibleY: 500,
+        yStops: ChartGeneratorFactory.defaultStops,
+        fractionYStops: ChartGeneratorFactory.defaultFractionStops,
+        yColors: ChartGeneratorFactory.defaultColors,
+        yGradient: ChartGeneratorFactory.defaultGradient,
+        maxY: 500,
+        minY: 0,
+        specificGradient: ChartGeneratorFactory.defaultGradient,
+      );
 
   @override
   Future<LineChartData Function(BuildContext, DeviceSize)>
@@ -208,7 +208,7 @@ class CarbonIntensityChartGeneratorFactory
     final double x =
         (period.from.toLocal().millisecondsSinceEpoch +
             period.to.toLocal().millisecondsSinceEpoch) /
-            2;
+        2;
     return FlSpot(x, y);
   }
 
