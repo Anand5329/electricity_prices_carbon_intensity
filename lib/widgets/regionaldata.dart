@@ -1,6 +1,8 @@
+import 'package:electricity_prices_and_carbon_intensity/utilities/generationMixApiCaller.dart';
 import 'package:electricity_prices_and_carbon_intensity/utilities/style.dart';
 import 'package:electricity_prices_and_carbon_intensity/widgets/chart.dart';
 import 'package:electricity_prices_and_carbon_intensity/utilities/httpclient.dart';
+import 'package:electricity_prices_and_carbon_intensity/widgets/pieChart.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
@@ -23,11 +25,16 @@ class _RegionalPageState extends State<RegionalPage> {
   static const String defaultPostcode = "N1";
 
   late int _counter = 0;
+  late GenerationMix _generationMix;
   final _caller = RegionalCarbonIntensityGenerationMixCaller();
   late RegionalCarbonIntensityChartGeneratorFactory
   _regionalChartGeneratorFactory;
   AdaptiveChartWidgetBuilder? _adaptiveChartWidgetBuilder;
   PeriodData<IntensityData>? _minPeriod;
+
+  late RegionalGenerationMixChartGeneratorFactory
+  _regionalPieChartGeneratorFactory;
+  AdaptivePieChartWidgetBuilder? _adaptivePieChartWidgetBuilder;
 
   final _postcodeController = TextEditingController();
 
@@ -54,33 +61,30 @@ class _RegionalPageState extends State<RegionalPage> {
     _caller.postcode = _postcodeController.text;
   }
 
-  Future<int> _getCarbonIntensity() async {
-    try {
-      _fetchPostcode();
-      final intensity = await _caller.getCurrentIntensityForPostcode(
-        _caller.postcode!,
-      );
-      return CarbonIntensityCaller.convertToInt(intensity);
-    } on Exception catch (e) {
-      logger.e(e.toString());
-      return -1;
-    }
-  }
-
-  Future<void> _refreshCarbonIntensity() async {
+  Future<void> _refreshCarbonIntensityAndGenerationMix() async {
     _resetCounter();
     int ci = -1;
-    ci = await _getCarbonIntensity();
+    _fetchPostcode();
+
+    final regional = await _caller.getRegionalDataForPostcode(
+      _caller.postcode!,
+    );
+    final intensity = regional.intensityData.first;
+    final generation = regional.generationData.first;
+
+    ci = CarbonIntensityCaller.convertToInt(intensity);
 
     if (ci != -1) {
-      for (int i = 0; i <= ci; i++) {
-        setState(() {
-          _counter = i;
-        });
-      }
+      setState(() {
+        _counter = ci;
+      });
     } else {
       logger.e("Could not fetch latest CI");
     }
+
+    setState(() {
+      _generationMix = generation.value;
+    });
   }
 
   Future<void> _refreshChartData() async {
@@ -94,18 +98,31 @@ class _RegionalPageState extends State<RegionalPage> {
     });
   }
 
+  Future<void> _refreshPieChartData() async {
+    _fetchPostcode();
+    _regionalPieChartGeneratorFactory =
+        RegionalGenerationMixChartGeneratorFactory(_generationMix, setState);
+    final _pieChartGenerator = await _regionalPieChartGeneratorFactory
+        .getChartGenerator();
+    setState(() {
+      _adaptivePieChartWidgetBuilder = AdaptivePieChartWidgetBuilder(
+        _pieChartGenerator,
+      );
+    });
+  }
+
   @override
   void initState() {
     super.initState();
     _regionalChartGeneratorFactory =
         RegionalCarbonIntensityChartGeneratorFactory(_caller, setState);
-    _refreshCarbonIntensity();
-    _refreshChartData();
+    _refreshAsync();
   }
 
-  void _refreshAsync() {
-    _refreshCarbonIntensity();
+  void _refreshAsync() async {
+    await _refreshCarbonIntensityAndGenerationMix();
     _refreshChartData();
+    _refreshPieChartData();
   }
 
   @override
@@ -147,20 +164,30 @@ class _RegionalPageState extends State<RegionalPage> {
             _minPeriod == null
                 ? SizedBox()
                 : Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text("Next lowest:"),
-                Text(
-                  _minPeriod!.prettyPrintPeriod(),
-                  style: StyleComponents.smallText,
-                ),
-                Text(
-                  "${_minPeriod?.value.get()} ${CarbonIntensityChartGeneratorFactory.unit}",
-                  style: StyleComponents.smallText,
-                ),
-                SizedBox(height: 20),
-              ],
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text("Next lowest:"),
+                      Text(
+                        _minPeriod!.prettyPrintPeriod(),
+                        style: StyleComponents.smallText,
+                      ),
+                      Text(
+                        "${_minPeriod?.value.get()} ${CarbonIntensityChartGeneratorFactory.unit}",
+                        style: StyleComponents.smallText,
+                      ),
+                      SizedBox(height: 20),
+                    ],
+                  ),
+            const SizedBox(height: 40),
+            StyleComponents.headlineTextWrapper(
+              "Generation Mix",
+              Theme.of(context),
             ),
+            _adaptivePieChartWidgetBuilder == null
+                ? SizedBox()
+                : _regionalPieChartGeneratorFactory.getChartWithLegend(
+                    _adaptivePieChartWidgetBuilder!,
+                  ),
           ],
         ),
       ),
@@ -174,7 +201,7 @@ class RegionalCarbonIntensityChartGeneratorFactory
   final void Function(VoidCallback) setStateFn;
 
   RegionalCarbonIntensityChartGeneratorFactory(this.caller, this.setStateFn)
-      : super(caller, setStateFn);
+    : super(caller, setStateFn);
 
   /// ensure postcode is set in caller before calling
   @override
@@ -183,19 +210,18 @@ class RegionalCarbonIntensityChartGeneratorFactory
     DateTime today = DateTime.now().toUtc();
     List<RegionalData> pastData = await this.caller
         .getRegionalDataForPostcodeFrom(
-      caller.postcode!,
-      from: today,
-      modifier: FromModifier.past24,
-    );
-    DateTime time1 = DateTime.now().toUtc();
+          caller.postcode!,
+          from: today,
+          modifier: FromModifier.past24,
+        );
     List<PeriodData<IntensityData>> past = pastData.first.intensityData;
+
     List<RegionalData> futureData = await this.caller
         .getRegionalDataForPostcodeFrom(
-      caller.postcode!,
-      from: today,
-      modifier: FromModifier.forward24,
-    );
-    DateTime time2 = DateTime.now().toUtc();
+          caller.postcode!,
+          from: today,
+          modifier: FromModifier.forward24,
+        );
     List<PeriodData<IntensityData>> future = futureData.first.intensityData;
 
     int currentIntensityIndex = _getCurrentIntensityIndex(past);
@@ -204,10 +230,6 @@ class RegionalCarbonIntensityChartGeneratorFactory
     all.addAll(future);
 
     List<FlSpot> spots = convertToChartData(all);
-    DateTime time3 = DateTime.now().toUtc();
-    // logger.d(today.difference(time1));
-    // logger.d(time1.difference(time2));
-    // logger.d(time2.difference(time3));
     return (BuildContext context, DeviceSize size) {
       this.backgroundColor = Theme.of(context).colorScheme.surface;
       return getChartData(spots, currentIntensityIndex, size);
@@ -215,7 +237,6 @@ class RegionalCarbonIntensityChartGeneratorFactory
   }
 
   static int _getCurrentIntensityIndex(List<PeriodData<IntensityData>> past) {
-    // TODO: make this inline with getCurrentIntensity
     DateTime now = DateTime.now().toUtc();
 
     for (var i = 0; i < past.length; i++) {
@@ -224,5 +245,53 @@ class RegionalCarbonIntensityChartGeneratorFactory
       }
     }
     return past.length - 1;
+  }
+}
+
+class RegionalGenerationMixChartGeneratorFactory
+    extends PieChartGeneratorFactory<EnergySource> {
+  static List<Widget> generateLegend() {
+    return EnergySource.values
+        .map(
+          (src) => <Widget>[
+            Indicator(
+              color: PieChartGeneratorFactory.colorMap[src]!,
+              text: src.toString(),
+              isSquare: true,
+            ),
+          ],
+        )
+        .reduce((srcs1, srcs2) {
+          List<Widget> newSrcs = List.from(srcs1);
+          newSrcs.add(SizedBox(height: 4));
+          newSrcs.addAll(srcs2);
+          return newSrcs;
+        });
+  }
+
+  final GenerationMix genMix;
+  RegionalGenerationMixChartGeneratorFactory(this.genMix, super.setStateFn);
+
+  @override
+  PieChart Function(BuildContext context, DeviceSize size) getChartGenerator() {
+    return (BuildContext context, DeviceSize size) {
+      this.theme = Theme.of(context);
+      this.backgroundColor = theme.colorScheme.surface;
+      return getChart(genMix.toMap(), PieChartGeneratorFactory.colorMap, size);
+    };
+  }
+
+  Row getChartWithLegend(AdaptivePieChartWidgetBuilder widgetBuilder) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Expanded(child: LayoutBuilder(builder: widgetBuilder.builder)),
+        Column(
+          mainAxisAlignment: MainAxisAlignment.end,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: generateLegend(),
+        ),
+      ],
+    );
   }
 }
