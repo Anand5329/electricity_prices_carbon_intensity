@@ -5,6 +5,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
 import '../utilities/carbonIntensityApiCaller.dart';
+import '../utilities/regionalCarbonIntensityGenerationMixApiCaller.dart';
 import 'animatedCounter.dart';
 
 var logger = Logger(filter: null, printer: PrettyPrinter(), output: null);
@@ -21,7 +22,7 @@ class _CarbonIntensityPageState extends State<CarbonIntensityPage> {
   static const String defaultPostcode = "N1";
 
   late int _counter = 0;
-  final _caller = RegionalCarbonIntensityCaller();
+  final _caller = RegionalCarbonIntensityGenerationMixCaller();
   late CarbonIntensityChartGeneratorFactory _chartGeneratorFactory;
   late RegionalCarbonIntensityChartGeneratorFactory
   _regionalChartGeneratorFactory;
@@ -280,7 +281,7 @@ class CarbonIntensityChartGeneratorFactory
 
 class RegionalCarbonIntensityChartGeneratorFactory
     extends CarbonIntensityChartGeneratorFactory {
-  final RegionalCarbonIntensityCaller caller;
+  final RegionalCarbonIntensityGenerationMixCaller caller;
   final void Function(VoidCallback) setStateFn;
 
   RegionalCarbonIntensityChartGeneratorFactory(this.caller, this.setStateFn)
@@ -291,14 +292,14 @@ class RegionalCarbonIntensityChartGeneratorFactory
   Future<LineChartData Function(BuildContext p1, DeviceSize p2)>
   getChartGenerator() async {
     DateTime today = DateTime.now().toUtc();
-    List<RegionalIntensityData> pastData = await this.caller
+    List<RegionalData> pastData = await this.caller
         .getRegionalDataForPostcodeFrom(
           caller.postcode!,
           from: today,
           modifier: FromModifier.past24,
         );
     List<PeriodData<IntensityData>> past = pastData.first.intensityData;
-    List<RegionalIntensityData> futureData = await this.caller
+    List<RegionalData> futureData = await this.caller
         .getRegionalDataForPostcodeFrom(
           caller.postcode!,
           from: today,
