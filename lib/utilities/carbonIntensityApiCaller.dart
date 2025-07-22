@@ -124,11 +124,7 @@ class CarbonIntensityCaller extends ApiCaller
   PeriodData<IntensityData> _parseIntensityAndTimeFromJson(
     Map<String, dynamic> innerJson,
   ) {
-    return PeriodData<IntensityData>(
-      from: innerJson["from"],
-      to: innerJson["to"],
-      value: IntensityData.fromJson(innerJson["intensity"]),
-    );
+    return parseTimePeriod(innerJson, IntensityData.fromJson);
   }
 }
 
@@ -337,10 +333,11 @@ class IntensityData implements Comparable<IntensityData> {
   }
 
   factory IntensityData.fromJson(Map<String, dynamic> json) {
+    Map<String, dynamic> intensity = json["intensity"];
     return IntensityData(
-      forecast: json['forecast'],
-      actual: json['actual'],
-      index: json['index'],
+      forecast: intensity['forecast'],
+      actual: intensity['actual'],
+      index: intensity['index'],
     );
   }
 
