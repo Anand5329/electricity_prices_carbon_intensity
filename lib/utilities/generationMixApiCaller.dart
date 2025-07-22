@@ -10,7 +10,6 @@ var logger = Logger(filter: null, printer: PrettyPrinter(), output: null);
 class GenerationMixApiCaller extends ApiCaller {
   static const String BASE_URL = "https://api.carbonintensity.org.uk/";
   static const String _generation = "generation/";
-  static const String _regional = "regional/";
 
   GenerationMixApiCaller() : super(BASE_URL);
 
