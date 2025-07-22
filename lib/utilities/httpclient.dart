@@ -20,6 +20,24 @@ class ApiCaller {
     );
   }
 
+  @protected
+  Future<Response> getRaw(String path) async {
+    final url = Uri.parse('$baseUrl$path');
+    return await client.get(url);
+  }
+
+  @protected
+  PeriodData<T> parseTimePeriod<T extends Comparable<T>>(
+    Map<String, dynamic> json,
+    T Function(Map<String, dynamic>) fromJsonFn,
+  ) {
+    return PeriodData<T>(
+      from: json["from"],
+      to: json["to"],
+      value: fromJsonFn(json),
+    );
+  }
+
   bool isValidResponse(Response response) {
     return 200 <= response.statusCode && response.statusCode <= 299;
   }
