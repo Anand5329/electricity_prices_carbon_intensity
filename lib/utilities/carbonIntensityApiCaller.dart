@@ -2,8 +2,11 @@ import 'package:electricity_prices_and_carbon_intensity/utilities/minimumForecas
 import 'package:http/http.dart';
 import 'dart:convert';
 import 'package:intl/intl.dart';
+import 'package:logger/logger.dart';
 
 import 'httpclient.dart';
+
+final logger = Logger(filter: null, printer: PrettyPrinter(), output: null);
 
 class CarbonIntensityCaller extends ApiCaller
     with MinimumForecaster<IntensityData> {
@@ -26,6 +29,12 @@ class CarbonIntensityCaller extends ApiCaller
   /// fetches the current (latest) carbon intensity
   Future<PeriodData<IntensityData>> getCurrentIntensity() async {
     final response = await _get('$_intensity/');
+    return await _getFirstFromIntensityList(response);
+  }
+
+  Future<PeriodData<IntensityData>> _getFirstFromIntensityList(
+    Response response,
+  ) async {
     if (!isValidResponse(response)) {
       throw Exception("No intensity found");
     }
@@ -62,30 +71,29 @@ class CarbonIntensityCaller extends ApiCaller
     FromModifier modifier = FromModifier.none,
     DateTime? to,
   }) async {
-    String modifyString = '';
-    switch (modifier) {
-      case FromModifier.forward24:
-        modifyString = 'fw24h/';
-        break;
-      case FromModifier.forward48:
-        modifyString = 'fw48h/';
-        break;
-      case FromModifier.past24:
-        modifyString = 'pt24h/';
-        break;
-      case FromModifier.to:
-        if (to == null) {
-          throw ArgumentError('Please supply a valid "to" datetime.');
-        }
-        modifyString = '${to.toIso8601String()}/';
-        break;
-      case FromModifier.none:
-        modifyString = '';
-    }
+    String modifyString = _getModifierString(modifier, to);
 
     final fromFormatted = from.toIso8601String();
     final response = await _get('$_intensity/$fromFormatted/$modifyString');
     return !isValidResponse(response) ? [] : _parseIntensityAndTime(response);
+  }
+
+  static String _getModifierString(FromModifier modifier, DateTime? to) {
+    switch (modifier) {
+      case FromModifier.forward24:
+        return 'fw24h/';
+      case FromModifier.forward48:
+        return 'fw48h/';
+      case FromModifier.past24:
+        return 'pt24h/';
+      case FromModifier.to:
+        if (to == null) {
+          throw ArgumentError('Please supply a valid "to" datetime.');
+        }
+        return '${to.toIso8601String()}/';
+      case FromModifier.none:
+        return '';
+    }
   }
 
   /// forecasts intensity 24 hrs into the future
@@ -108,13 +116,211 @@ class CarbonIntensityCaller extends ApiCaller
   List<PeriodData<IntensityData>> _parseIntensityAndTime(Response response) {
     final json = jsonDecode(response.body);
     final List data = json['data'];
-    return data.map((e) {
-      return PeriodData<IntensityData>(
-        from: e["from"],
-        to: e["to"],
-        value: IntensityData.fromJson(e["intensity"]),
+
+    return data
+        .map((innerJson) => _parseIntensityAndTimeFromJson(innerJson))
+        .toList();
+  }
+
+  PeriodData<IntensityData> _parseIntensityAndTimeFromJson(
+    Map<String, dynamic> innerJson,
+  ) {
+    return PeriodData<IntensityData>(
+      from: innerJson["from"],
+      to: innerJson["to"],
+      value: IntensityData.fromJson(innerJson["intensity"]),
+    );
+  }
+}
+
+class RegionalCarbonIntensityCaller extends CarbonIntensityCaller
+    with MinimumForecaster<IntensityData> {
+  static const String _regional = "regional/";
+  static const String _regionid = "${RegionalIntensityData._regionid}/";
+  static const String _postcode = "postcode/";
+
+  String? postcode;
+  int? regionId;
+
+  RegionalCarbonIntensityCaller({this.postcode, this.regionId}) : super();
+
+  /// fetches current intensity data for postcode
+  Future<PeriodData<IntensityData>> getCurrentIntensityForPostcode(
+    String postcode,
+  ) async {
+    final regionalIntensity = await getRegionalIntensityDataForPostcode(
+      postcode,
+    );
+    if (regionalIntensity.intensityData.isEmpty) {
+      throw Exception("No intensity data found!");
+    }
+    return regionalIntensity.intensityData.first;
+  }
+
+  /// fetches current intensity data for region id
+  Future<PeriodData<IntensityData>> getCurrentIntensityForRegionId(
+    int regionId,
+  ) async {
+    final regionalIntensity = await getRegionalIntensityDataForRegionId(
+      regionId,
+    );
+    if (regionalIntensity.intensityData.isEmpty) {
+      throw Exception("No intensity data found!");
+    }
+    return regionalIntensity.intensityData.first;
+  }
+
+  /// fetches current regional intensity data for postcode
+  Future<RegionalIntensityData> getRegionalIntensityDataForPostcode(
+    String postcode,
+  ) async {
+    Response response = await _getResponseForPostcode(postcode);
+    List<RegionalIntensityData> regions = _parseRegionalData(response);
+    if (regions.isEmpty) {
+      throw Exception("No regional data found after parsing!");
+    }
+    return regions.first;
+  }
+
+  /// fetches current regional intensity data for region id
+  Future<RegionalIntensityData> getRegionalIntensityDataForRegionId(
+    int regionId,
+  ) async {
+    Response response = await _getResponseForRegionId(regionId);
+    List<RegionalIntensityData> regions = _parseRegionalData(response);
+    if (regions.isEmpty) {
+      throw Exception("No regional data found after parsing!");
+    }
+    return regions.first;
+  }
+
+  /// fetches regional data for postcode from a particular date
+  Future<List<RegionalIntensityData>> getRegionalDataForPostcodeFrom(
+    String postcode, {
+    required DateTime from,
+    FromModifier modifier = FromModifier.none,
+    DateTime? to,
+  }) {
+    return _getRegionalDataFromHelper(
+      "$_postcode$postcode",
+      from: from,
+      modifier: modifier,
+      to: to,
+    );
+  }
+
+  /// fetches regional data for region id from a particular date
+  Future<List<RegionalIntensityData>> getRegionalDataForRegionIdFrom(
+    int regionId, {
+    required DateTime from,
+    FromModifier modifier = FromModifier.none,
+    DateTime? to,
+  }) {
+    return _getRegionalDataFromHelper(
+      "$_regionid$regionId",
+      from: from,
+      modifier: modifier,
+      to: to,
+    );
+  }
+
+  /// fetches the forecast regional intensity data
+  ///
+  /// one of instance members postcode and regionId will be used to fetch data
+  /// postcode is preferred over regionId if both are set
+  @override
+  Future<List<PeriodData<IntensityData>>> forecast() async {
+    DateTime now = DateTime.now().toUtc();
+    final regionalData = postcode != null
+        ? await getRegionalDataForPostcodeFrom(
+            postcode!,
+            from: now,
+            modifier: FromModifier.forward24,
+          )
+        : await getRegionalDataForRegionIdFrom(
+            regionId!,
+            from: now,
+            modifier: FromModifier.forward24,
+          );
+
+    if (regionalData.isEmpty) {
+      throw Exception("No regional data found for $postcode ($regionId)");
+    }
+
+    return regionalData.first.intensityData;
+  }
+
+  /// returns the least amount in the future
+  ///
+  /// one of instance members postcode and regionId will be used to fetch data
+  /// postcode is preferred over regionId if both are set
+  /// fetches the forecast data and then calls predictMinimumWith
+  @override
+  Future<PeriodData<IntensityData>> forecastMinimum() async {
+    List<PeriodData<IntensityData>> forecastData = await forecast();
+    return forecastMinimumWith(forecastData);
+  }
+
+  Future<List<RegionalIntensityData>> _getRegionalDataFromHelper(
+    String postfix, {
+    required DateTime from,
+    FromModifier modifier = FromModifier.forward24,
+    DateTime? to,
+  }) async {
+    String modifierString = CarbonIntensityCaller._getModifierString(
+      modifier,
+      to,
+    );
+    String fromString = from.toIso8601String();
+
+    final response = await _get(
+      "$_regional${CarbonIntensityCaller._intensity}/$fromString/$modifierString$postfix",
+    );
+    return _parseRegionalData(response);
+  }
+
+  Future<Response> _getResponseForPostcode(String postcode) async {
+    postcode = postcode.trim();
+    final response = await _get("$_regional$_postcode$postcode");
+    return response;
+  }
+
+  Future<Response> _getResponseForRegionId(int regionId) async {
+    final response = await _get("$_regional$_regionid$regionId");
+    return response;
+  }
+
+  List<RegionalIntensityData> _parseRegionalData(Response response) {
+    if (!isValidResponse(response)) {
+      throw Exception(
+        "No regional data found: Error code ${response.statusCode}",
       );
-    }).toList();
+    }
+
+    var json = jsonDecode(response.body)["data"];
+
+    if (json is Map<String, dynamic>) {
+      json = List.of([json]);
+    } else {
+      if (json.isEmpty) {
+        throw Exception("No regional data found!");
+      }
+    }
+
+    List<RegionalIntensityData> regions = [];
+
+    json.forEach((elemJson) {
+      List innerJsons = elemJson["data"];
+      final regionalIntensityData = RegionalIntensityData.fromJson(elemJson);
+      List<PeriodData<IntensityData>> intensityData = [];
+      innerJsons.forEach((innerJson) {
+        intensityData.add(_parseIntensityAndTimeFromJson(innerJson));
+      });
+      regionalIntensityData.intensityData = intensityData;
+      regions.add(regionalIntensityData);
+    });
+
+    return regions;
   }
 }
 
@@ -166,6 +372,71 @@ class IntensityData implements Comparable<IntensityData> {
         this.actual == other.actual &&
         this.forecast == other.forecast &&
         this.index == other.index;
+  }
+
+  @override
+  int get hashCode =>
+      (actual ?? 0) * 31 + (forecast ?? 0) * 73 + (index?.hashCode ?? 0);
+}
+
+class RegionalIntensityData {
+  static const String _regionid = "regionid";
+  static const String _shortname = "shortname";
+
+  final String shortname;
+  final String dnoregion;
+  final int regionId;
+
+  late final List<PeriodData<IntensityData>> intensityData;
+
+  RegionalIntensityData(this.shortname, this.dnoregion, this.regionId);
+
+  factory RegionalIntensityData.fromJson(Map<String, dynamic> json) {
+    return RegionalIntensityData(
+      json[_shortname],
+      json["dnoregion"] ?? json[_shortname],
+      json[_regionid],
+    );
+  }
+}
+
+/// to store each generation factor within the generation mix
+class GenerationFactor {
+  /// The fuel type contributing to the generation
+  final String fuel;
+
+  /// The percentage of generation mix denoted by this fuel type
+  final double perc;
+
+  GenerationFactor(this.fuel, this.perc);
+
+  factory GenerationFactor.fromJson(Map<String, dynamic> json) {
+    return GenerationFactor(json["fuel"], json["perc"]);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is GenerationFactor &&
+        this.fuel == other.fuel &&
+        this.perc == other.perc;
+  }
+
+  @override
+  int get hashCode => fuel.hashCode + (perc * 31).round();
+}
+
+class GenerationMix {
+  final List<GenerationFactor> factors;
+
+  GenerationMix({this.factors = const []});
+
+  factory GenerationMix.fromJson(Map<String, dynamic> json) {
+    List<dynamic> factors = json["generationmix"];
+    GenerationMix genMix = GenerationMix();
+    genMix.factors.addAll(
+      factors.map((factorJson) => GenerationFactor.fromJson(factorJson)),
+    );
+    return genMix;
   }
 }
 

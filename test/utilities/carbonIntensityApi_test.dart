@@ -7,7 +7,7 @@ var logger = Logger(filter: null, printer: PrettyPrinter(), output: null);
 
 void main() {
   final client = CarbonIntensityCaller();
-  group('Testing httpclient CarbonIntensityCaller', () {
+  group('Testing CarbonIntensityCaller', () {
     test('get current intensity', () async {
       PeriodData<IntensityData> period = await client.getCurrentIntensity();
       DateTime now = DateTime.now().toUtc();
@@ -131,6 +131,222 @@ void main() {
     test('forecast minimum', () async {
       List<PeriodData<IntensityData>> forecast = await client.forecast();
       PeriodData<IntensityData> min = await client.forecastMinimum();
+
+      for (PeriodData<IntensityData> moment in forecast) {
+        expect(moment >= min, true);
+      }
+    });
+  });
+
+  RegionalCarbonIntensityCaller regionalClient =
+      RegionalCarbonIntensityCaller();
+
+  group('Testing RegionalCarbonIntensityCaller', () {
+    test('get current intensity for london using postcode', () async {
+      PeriodData<IntensityData> period = await regionalClient
+          .getCurrentIntensityForPostcode("N5");
+      DateTime now = DateTime.now().toUtc();
+
+      expect(period.value.forecast?.isFinite, true);
+      expect(period.from.isBefore(now), true);
+      expect(period.to.isBefore(now), true);
+
+      RegionalIntensityData regionalIntensityData = await regionalClient
+          .getRegionalIntensityDataForPostcode("N5");
+
+      expect(regionalIntensityData.dnoregion, "UKPN London");
+      expect(regionalIntensityData.shortname, "London");
+      expect(regionalIntensityData.regionId, 13);
+    });
+
+    test('get current intensity for london using regionId', () async {
+      PeriodData<IntensityData> period = await regionalClient
+          .getCurrentIntensityForRegionId(13);
+      DateTime now = DateTime.now().toUtc();
+
+      expect(period.value.forecast?.isFinite, true);
+      expect(period.from.isBefore(now), true);
+      expect(period.to.isBefore(now), true);
+
+      RegionalIntensityData regionalIntensityData = await regionalClient
+          .getRegionalIntensityDataForRegionId(13);
+
+      expect(regionalIntensityData.dnoregion, "UKPN London");
+      expect(regionalIntensityData.shortname, "London");
+      expect(regionalIntensityData.regionId, 13);
+    });
+
+    test('get regional intensity forward 24h for london', () async {
+      final datetime = DateTime(2023, 3, 9, 16, 20);
+      final regionId = 13;
+      final postcode = "N5";
+
+      final regionalData = await regionalClient.getRegionalDataForPostcodeFrom(
+        postcode,
+        from: datetime,
+        modifier: FromModifier.forward24,
+      );
+      expect(regionalData.length, 1);
+      expect(regionalData[0].dnoregion, "UKPN London");
+      expect(regionalData[0].shortname, "London");
+      expect(regionalData[0].regionId, 13);
+      final regionalData2 = await regionalClient.getRegionalDataForRegionIdFrom(
+        regionId,
+        from: datetime,
+        modifier: FromModifier.forward24,
+      );
+      expect(regionalData2.length, 1);
+      expect(regionalData2[0].dnoregion, "UKPN London");
+      expect(regionalData2[0].shortname, "London");
+      expect(regionalData2[0].regionId, 13);
+
+      final periodsData = regionalData[0].intensityData;
+      expect(periodsData.length, 48);
+      var startDate = periodsData.first.to;
+      var endDate = periodsData.last.to;
+      expect(
+        startDate.isBefore(endDate),
+        true,
+        reason: "$startDate before $endDate",
+      );
+      expect(
+        datetime.isBefore(startDate),
+        true,
+        reason: "$datetime before $startDate",
+      );
+      expect(
+        endDate.subtract(Duration(hours: 23, minutes: 30)),
+        startDate,
+        reason: "$startDate is about one day before $endDate",
+      );
+    });
+
+    test('get regional intensity forward 48h', () async {
+      final datetime = DateTime(2023, 3, 9, 16, 20);
+      final regionId = 13;
+      final postcode = "N5";
+
+      final regionalData = await regionalClient.getRegionalDataForPostcodeFrom(
+        postcode,
+        from: datetime,
+        modifier: FromModifier.forward48,
+      );
+      expect(regionalData.length, 1);
+      expect(regionalData[0].dnoregion, "UKPN London");
+      expect(regionalData[0].shortname, "London");
+      expect(regionalData[0].regionId, 13);
+      final regionalData2 = await regionalClient.getRegionalDataForRegionIdFrom(
+        regionId,
+        from: datetime,
+        modifier: FromModifier.forward48,
+      );
+      expect(regionalData2.length, 1);
+      expect(regionalData2[0].dnoregion, "UKPN London");
+      expect(regionalData2[0].shortname, "London");
+      expect(regionalData2[0].regionId, 13);
+
+      final periodsData = regionalData[0].intensityData;
+      expect(periodsData.length, 96);
+      var startDate = periodsData.first.to;
+      var endDate = periodsData.last.to;
+      expect(
+        startDate.isBefore(endDate),
+        true,
+        reason: "$startDate before $endDate",
+      );
+      expect(
+        datetime.isBefore(startDate),
+        true,
+        reason: "$datetime before $startDate",
+      );
+      expect(
+        endDate.subtract(Duration(hours: 47, minutes: 30)),
+        startDate,
+        reason: "$startDate is about one day before $endDate",
+      );
+    });
+
+    test('get regional intensity past 24h', () async {
+      final datetime = DateTime(2023, 3, 9, 16, 20);
+      final regionId = 13;
+      final postcode = "N5";
+
+      final regionalData = await regionalClient.getRegionalDataForPostcodeFrom(
+        postcode,
+        from: datetime,
+        modifier: FromModifier.past24,
+      );
+      expect(regionalData.length, 1);
+      expect(regionalData[0].dnoregion, "UKPN London");
+      expect(regionalData[0].shortname, "London");
+      expect(regionalData[0].regionId, 13);
+      final regionalData2 = await regionalClient.getRegionalDataForRegionIdFrom(
+        regionId,
+        from: datetime,
+        modifier: FromModifier.past24,
+      );
+      expect(regionalData2.length, 1);
+      expect(regionalData2[0].dnoregion, "UKPN London");
+      expect(regionalData2[0].shortname, "London");
+      expect(regionalData2[0].regionId, 13);
+
+      final periodsData = regionalData[0].intensityData;
+      expect(periodsData.length, 48);
+      var startDate = periodsData.first.from;
+      var endDate = periodsData.last.from;
+      expect(
+        startDate.isBefore(endDate),
+        true,
+        reason: "$startDate before $endDate",
+      );
+      expect(
+        startDate.isBefore(datetime),
+        true,
+        reason: "$startDate before $datetime",
+      );
+      expect(
+        endDate.subtract(Duration(hours: 23, minutes: 30)),
+        startDate,
+        reason: "$startDate is about one day before $endDate",
+      );
+    });
+
+    test('get regional intensity from date to date', () async {
+      final from = DateTime(2023, 3, 9, 16, 20);
+      final to = DateTime(2023, 3, 9, 19, 20);
+      final regionId = 13;
+      final postcode = "N5";
+
+      final regionalData = await regionalClient.getRegionalDataForPostcodeFrom(
+        postcode,
+        from: from,
+        modifier: FromModifier.to,
+        to: to,
+      );
+      expect(regionalData.length, 1);
+      expect(regionalData[0].dnoregion, "London");
+      expect(regionalData[0].shortname, "London");
+      expect(regionalData[0].regionId, 13);
+      final regionalData2 = await regionalClient.getRegionalDataForRegionIdFrom(
+        regionId,
+        from: from,
+        modifier: FromModifier.to,
+        to: to,
+      );
+      expect(regionalData2.length, 1);
+      expect(regionalData2[0].dnoregion, "UKPN London");
+      expect(regionalData2[0].shortname, "London");
+      expect(regionalData2[0].regionId, 13);
+
+      final periodsData = regionalData[0].intensityData;
+      expect(periodsData.length, 6);
+    });
+
+    test('forecast regional minimum', () async {
+      regionalClient.postcode = "N5";
+      List<PeriodData<IntensityData>> forecast = await regionalClient
+          .forecast();
+      PeriodData<IntensityData> min = await regionalClient.forecastMinimum();
 
       for (PeriodData<IntensityData> moment in forecast) {
         expect(moment >= min, true);

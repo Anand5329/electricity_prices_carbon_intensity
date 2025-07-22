@@ -248,6 +248,10 @@ class Tariff {
         this.name == other.name &&
         this.paymentMethod == other.paymentMethod;
   }
+
+  @override
+  int get hashCode =>
+      37 * code.hashCode + 73 * name.hashCode + 113 * paymentMethod.hashCode;
 }
 
 enum RateType {
@@ -313,4 +317,10 @@ class Rate implements Comparable<Rate> {
   int compareTo(Rate other) {
     return (this.valueIncVat - other.valueIncVat).compareTo(0);
   }
+
+  @override
+  int get hashCode =>
+      (valueIncVat * 31).round() +
+      (valueExcVat * 73).round() +
+      113 * paymentMethod.hashCode;
 }
