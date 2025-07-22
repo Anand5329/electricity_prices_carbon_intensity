@@ -81,18 +81,18 @@ class CarbonIntensityCaller extends ApiCaller
   static String _getModifierString(FromModifier modifier, DateTime? to) {
     switch (modifier) {
       case FromModifier.forward24:
-        return 'fw24h/';
+        return '${FromModifier.forward24}/';
       case FromModifier.forward48:
-        return 'fw48h/';
+        return '${FromModifier.forward48}/';
       case FromModifier.past24:
-        return 'pt24h/';
+        return '${FromModifier.past24}/';
       case FromModifier.to:
         if (to == null) {
           throw ArgumentError('Please supply a valid "to" datetime.');
         }
         return '${to.toIso8601String()}/';
       case FromModifier.none:
-        return '';
+        return FromModifier.none.toString();
     }
   }
 
@@ -104,8 +104,7 @@ class CarbonIntensityCaller extends ApiCaller
   }
 
   Future<Response> _get(String path) async {
-    final url = Uri.parse('$_baseUrl$path');
-    return await client.get(url);
+    return getRaw(path);
   }
 
   List<IntensityData> _parseIntensity(Response response) {
@@ -400,46 +399,21 @@ class RegionalIntensityData {
   }
 }
 
-/// to store each generation factor within the generation mix
-class GenerationFactor {
-  /// The fuel type contributing to the generation
-  final String fuel;
-
-  /// The percentage of generation mix denoted by this fuel type
-  final double perc;
-
-  GenerationFactor(this.fuel, this.perc);
-
-  factory GenerationFactor.fromJson(Map<String, dynamic> json) {
-    return GenerationFactor(json["fuel"], json["perc"]);
-  }
-
-  @override
-  bool operator ==(Object other) {
-    return other is GenerationFactor &&
-        this.fuel == other.fuel &&
-        this.perc == other.perc;
-  }
-
-  @override
-  int get hashCode => fuel.hashCode + (perc * 31).round();
-}
-
-class GenerationMix {
-  final List<GenerationFactor> factors;
-
-  GenerationMix({this.factors = const []});
-
-  factory GenerationMix.fromJson(Map<String, dynamic> json) {
-    List<dynamic> factors = json["generationmix"];
-    GenerationMix genMix = GenerationMix();
-    genMix.factors.addAll(
-      factors.map((factorJson) => GenerationFactor.fromJson(factorJson)),
-    );
-    return genMix;
-  }
-}
-
 // ---------------- Modifier Enum ----------------
 
-enum FromModifier { none, forward24, forward48, past24, to }
+enum FromModifier {
+  none(""),
+  forward24("fw24h"),
+  forward48("fw48h"),
+  past24("pt24h"),
+  to("to");
+
+  final String _rep;
+
+  const FromModifier(this._rep);
+
+  @override
+  String toString() {
+    return _rep;
+  }
+}
