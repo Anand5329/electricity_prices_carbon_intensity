@@ -185,8 +185,8 @@ class _RegionalPageState extends State<RegionalPage> {
             ),
             _adaptivePieChartWidgetBuilder == null
                 ? SizedBox()
-                : _regionalPieChartGeneratorFactory.getChartWithLegend(
-                    _adaptivePieChartWidgetBuilder!,
+                : LayoutBuilder(
+                    builder: _adaptivePieChartWidgetBuilder!.builder,
                   ),
           ],
         ),
@@ -250,46 +250,49 @@ class RegionalCarbonIntensityChartGeneratorFactory
 
 class RegionalGenerationMixChartGeneratorFactory
     extends PieChartGeneratorFactory<EnergySource> {
-  static List<Widget> generateLegend() {
-    return EnergySource.values
-        .map(
-          (src) => <Widget>[
-            Indicator(
-              color: PieChartGeneratorFactory.colorMap[src]!,
-              text: src.toString(),
-              isSquare: true,
-            ),
-          ],
-        )
-        .reduce((srcs1, srcs2) {
-          List<Widget> newSrcs = List.from(srcs1);
-          newSrcs.add(SizedBox(height: 4));
-          newSrcs.addAll(srcs2);
-          return newSrcs;
-        });
-  }
-
   final GenerationMix genMix;
+  late Map<EnergySource, Color> colorMap;
   RegionalGenerationMixChartGeneratorFactory(this.genMix, super.setStateFn);
 
   @override
-  PieChart Function(BuildContext context, DeviceSize size) getChartGenerator() {
+  Row Function(BuildContext context, DeviceSize size) getChartGenerator() {
     return (BuildContext context, DeviceSize size) {
       this.theme = Theme.of(context);
       this.backgroundColor = theme.colorScheme.surface;
-      return getChart(genMix.toMap(), PieChartGeneratorFactory.colorMap, size);
+      this.colorMap = PieChartGeneratorFactory.getDefaultColorMap();
+      PieChart chart = getChart(genMix.toMap(), colorMap, size);
+      double aspectRatio = size == DeviceSize.small ? 1 : 1.7;
+      return _getWidgetHelper(chart, aspectRatio);
     };
   }
 
-  Row getChartWithLegend(AdaptivePieChartWidgetBuilder widgetBuilder) {
+  Row _getWidgetHelper(PieChart chart, double aspectRatio) {
+    Map genMap = genMix.toMap();
+    colorMap.removeWhere((source, value) => genMap[source] == 0);
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Expanded(child: LayoutBuilder(builder: widgetBuilder.builder)),
-        Column(
-          mainAxisAlignment: MainAxisAlignment.end,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: generateLegend(),
+        Expanded(
+          child: AspectRatio(
+            aspectRatio: aspectRatio,
+            child: Padding(
+              padding: const EdgeInsets.only(
+                right: 18,
+                left: 5,
+                top: 0,
+                bottom: 0,
+              ),
+              child: chart,
+            ),
+          ),
+        ),
+        Padding(
+          padding: EdgeInsets.all(8),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.end,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: generateLegend(colorMap: this.colorMap),
+          ),
         ),
       ],
     );

@@ -35,7 +35,7 @@ abstract class PieChartGeneratorFactory<T> {
     this.textStyle = StyleComponents.smallText,
   });
 
-  PieChart Function(BuildContext, DeviceSize) getChartGenerator();
+  Widget Function(BuildContext, DeviceSize) getChartGenerator();
 
   PieChart getChart(
     Map<T, double> data,
@@ -84,22 +84,25 @@ abstract class PieChartGeneratorFactory<T> {
     List<PieChartSectionData> sections = [];
     List<T> keys = chartValues.keys.toList();
     for (var i = 0; i < chartValues.length; i++) {
-      double radius = 80;
+      double radius = 120;
       double fontSize = 16;
       T factor = keys[i];
+      String title = factor.toString();
       if (touchedIndex == i) {
-        radius = 100;
+        radius = 150;
         fontSize = 20;
+        title =
+            "${factor.toString()}\n${chartValues[factor]!.toStringAsFixed(2)}%";
       }
       sections.add(
         PieChartSectionData(
           value: chartValues[factor],
-          title: factor.toString(),
+          title: title,
           color: colorMap[factor],
           titleStyle: TextStyle(
             fontSize: fontSize,
             fontWeight: FontWeight.bold,
-            color: theme.colorScheme.inversePrimary,
+            color: theme.colorScheme.primary,
           ),
           radius: radius,
         ),
@@ -107,40 +110,59 @@ abstract class PieChartGeneratorFactory<T> {
     }
     return sections;
   }
+
+  List<Widget> generateLegend({required Map colorMap}) {
+    return colorMap.keys
+        .map(
+          (src) => <Widget>[
+            Indicator(
+              color: colorMap[src]!,
+              text: src.toString(),
+              isSquare: true,
+              textColor: theme.colorScheme.primary,
+            ),
+          ],
+        )
+        .reduce((srcs1, srcs2) {
+          List<Widget> newSrcs = List.from(srcs1);
+          newSrcs.add(SizedBox(height: 4));
+          newSrcs.addAll(srcs2);
+          return newSrcs;
+        });
+  }
+
+  static Map<EnergySource, Color> getDefaultColorMap({
+    GenerationMix? genMix,
+    LinearGradient gradient = StyleComponents.energyGradient,
+  }) {
+    double accumulator = 0;
+    genMix ??= GenerationMix.uniform;
+    Map<EnergySource, double> percMap = genMix.toMap();
+    return Map.fromEntries(
+      EnergySource.values.map((source) {
+        accumulator += percMap[source]! / 100;
+        return MapEntry(source, StyleComponents.lerp(gradient, accumulator)!);
+      }),
+    );
+  }
 }
 
 class AdaptivePieChartWidgetBuilder {
   static const double widthThreshold = 600;
-  final PieChart Function(BuildContext, DeviceSize) _chartGenerator;
+  final Widget Function(BuildContext, DeviceSize) _chartGenerator;
 
   AdaptivePieChartWidgetBuilder(this._chartGenerator);
 
   Widget builder(BuildContext context, BoxConstraints constraints) {
     if (constraints.maxWidth > widthThreshold) {
-      return _getLargeWidthWidget(context);
+      return _getChart(context, DeviceSize.large);
     } else {
-      return _getSmallWidthWidget(context);
+      return _getChart(context, DeviceSize.small);
     }
   }
 
-  Widget _getSmallWidthWidget(BuildContext context) {
-    return AspectRatio(
-      aspectRatio: 1,
-      child: Padding(
-        padding: const EdgeInsets.only(right: 18, left: 5, top: 0, bottom: 0),
-        child: _chartGenerator(context, DeviceSize.small),
-      ),
-    );
-  }
-
-  Widget _getLargeWidthWidget(BuildContext context) {
-    return AspectRatio(
-      aspectRatio: 1,
-      child: Padding(
-        padding: const EdgeInsets.only(right: 18, left: 12, top: 0, bottom: 0),
-        child: _chartGenerator(context, DeviceSize.large),
-      ),
-    );
+  Widget _getChart(BuildContext context, DeviceSize size) {
+    return _chartGenerator(context, size);
   }
 }
 
