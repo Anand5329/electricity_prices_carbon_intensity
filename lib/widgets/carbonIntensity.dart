@@ -82,6 +82,7 @@ class _CarbonIntensityPageState extends State<CarbonIntensityPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
+            const SizedBox(height: 40),
             BigAnimatedCounter(count: _counter.toDouble()),
             SizedBox(height: 40),
             _adaptiveChartWidgetBuilder == null
