@@ -95,6 +95,35 @@ class ShimmerLoading extends StatefulWidget {
 
   @override
   State<ShimmerLoading> createState() => _ShimmerLoadingState();
+
+  static final Widget squarePlaceholder = AspectRatio(
+    aspectRatio: 1,
+    child: Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.black,
+        borderRadius: BorderRadius.circular(16),
+      ),
+    ),
+  );
+
+  static final Widget textPlaceholder = Container(
+    width: double.infinity,
+    height: 60,
+    decoration: BoxDecoration(
+      color: Colors.black,
+      borderRadius: BorderRadius.circular(16),
+    ),
+  );
+
+  static final Widget smallPlaceholder = Container(
+    width: 100,
+    height: 40,
+    decoration: BoxDecoration(
+      color: Colors.black,
+      borderRadius: BorderRadius.circular(16),
+    ),
+  );
 }
 
 class _ShimmerLoadingState extends State<ShimmerLoading> {

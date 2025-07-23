@@ -26,8 +26,9 @@ class _RegionalPageState extends State<RegionalPage> {
   static const String defaultPostcode = "N1";
 
   late int _counter = 0;
-  late GenerationMix _generationMix;
+  late PeriodData<GenerationMix> _generation;
   final _caller = RegionalCarbonIntensityGenerationMixCaller();
+  String? _regionName;
   late RegionalCarbonIntensityChartGeneratorFactory
   _regionalChartGeneratorFactory;
   AdaptiveChartWidgetBuilder? _adaptiveChartWidgetBuilder;
@@ -64,6 +65,7 @@ class _RegionalPageState extends State<RegionalPage> {
 
   Future<void> _refreshCarbonIntensityAndGenerationMix() async {
     _resetCounter();
+    _setLoading();
     int ci = -1;
     _fetchPostcode();
 
@@ -84,7 +86,16 @@ class _RegionalPageState extends State<RegionalPage> {
     }
 
     setState(() {
-      _generationMix = generation.value;
+      _regionName = regional.shortname;
+      _generation = generation;
+    });
+  }
+
+  void _setLoading() {
+    setState(() {
+      _regionName = null;
+      _adaptivePieChartWidgetBuilder = null;
+      _adaptiveChartWidgetBuilder = null;
     });
   }
 
@@ -102,7 +113,7 @@ class _RegionalPageState extends State<RegionalPage> {
   Future<void> _refreshPieChartData() async {
     _fetchPostcode();
     _regionalPieChartGeneratorFactory =
-        RegionalGenerationMixChartGeneratorFactory(_generationMix, setState);
+        RegionalGenerationMixChartGeneratorFactory(_generation.value, setState);
     final _pieChartGenerator = await _regionalPieChartGeneratorFactory
         .getChartGenerator();
     setState(() {
@@ -156,29 +167,29 @@ class _RegionalPageState extends State<RegionalPage> {
                 ),
               ],
             ),
-            BigAnimatedCounter(count: _counter.toDouble()),
-            SizedBox(height: 40),
             Shimmer(
               linearGradient: style.shimmerGradient(),
               child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
+                  ShimmerLoading(
+                    isLoading: _regionName == null,
+                    childGenerator: () => Text(
+                      "Region: $_regionName",
+                      style: StyleComponents.smallText,
+                    ),
+                    placeholder: ShimmerLoading.smallPlaceholder,
+                  ),
+                  SizedBox(height: 20),
+                  BigAnimatedCounter(count: _counter.toDouble()),
+                  SizedBox(height: 40),
                   ShimmerLoading(
                     isLoading: _adaptiveChartWidgetBuilder == null,
                     childGenerator: () => LayoutBuilder(
                       builder: _adaptiveChartWidgetBuilder!.builder,
                     ),
-                    placeholder: AspectRatio(
-                      aspectRatio: 1,
-                      child: Padding(
-                        padding: EdgeInsets.all(8),
-                        child: Container(
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            color: Colors.black,
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                        ),
-                      ),
+                    placeholder: StyleComponents.paddingWrapper(
+                      ShimmerLoading.squarePlaceholder,
                     ),
                   ),
                   SizedBox(height: 20),
@@ -199,31 +210,51 @@ class _RegionalPageState extends State<RegionalPage> {
                         SizedBox(height: 20),
                       ],
                     ),
-                    placeholder: Padding(
-                      padding: EdgeInsets.all(8),
-                      child: Container(
-                        width: double.infinity,
-                        height: 60,
-                        decoration: BoxDecoration(
-                          color: Colors.black,
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                      ),
+                    placeholder: StyleComponents.paddingWrapper(
+                      ShimmerLoading.textPlaceholder,
                     ),
                   ),
                 ],
               ),
             ),
             const SizedBox(height: 40),
-            StyleComponents.headlineTextWrapper(
+            StyleComponents.subHeadingTextWrapper(
               "Generation Mix",
               Theme.of(context),
             ),
-            _adaptivePieChartWidgetBuilder == null
-                ? SizedBox()
-                : LayoutBuilder(
-                    builder: _adaptivePieChartWidgetBuilder!.builder,
+            Shimmer(
+              linearGradient: style.shimmerGradient(),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  ShimmerLoading(
+                    isLoading: _adaptivePieChartWidgetBuilder == null,
+                    childGenerator: () => LayoutBuilder(
+                      builder: _adaptivePieChartWidgetBuilder!.builder,
+                    ),
+                    placeholder: StyleComponents.paddingWrapper(
+                      ShimmerLoading.squarePlaceholder,
+                    ),
                   ),
+                  const SizedBox(height: 40),
+                  ShimmerLoading(
+                    isLoading: _adaptivePieChartWidgetBuilder == null,
+                    childGenerator: () => Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          "Generation data as of: ${_generation.prettyPrintPeriod()}",
+                          style: StyleComponents.smallText,
+                        ),
+                      ],
+                    ),
+                    placeholder: StyleComponents.paddingWrapper(
+                      ShimmerLoading.textPlaceholder,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),
