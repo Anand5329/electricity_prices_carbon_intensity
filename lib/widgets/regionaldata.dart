@@ -3,6 +3,7 @@ import 'package:electricity_prices_and_carbon_intensity/utilities/style.dart';
 import 'package:electricity_prices_and_carbon_intensity/widgets/chart.dart';
 import 'package:electricity_prices_and_carbon_intensity/utilities/httpclient.dart';
 import 'package:electricity_prices_and_carbon_intensity/widgets/pieChart.dart';
+import 'package:electricity_prices_and_carbon_intensity/widgets/shimmerLoad.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
@@ -157,27 +158,62 @@ class _RegionalPageState extends State<RegionalPage> {
             ),
             BigAnimatedCounter(count: _counter.toDouble()),
             SizedBox(height: 40),
-            _adaptiveChartWidgetBuilder == null
-                ? SizedBox()
-                : LayoutBuilder(builder: _adaptiveChartWidgetBuilder!.builder),
-            SizedBox(height: 20),
-            _minPeriod == null
-                ? SizedBox()
-                : Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text("Next lowest:"),
-                      Text(
-                        _minPeriod!.prettyPrintPeriod(),
-                        style: StyleComponents.smallText,
+            Shimmer(
+              linearGradient: style.shimmerGradient(),
+              child: Column(
+                children: [
+                  ShimmerLoading(
+                    isLoading: _adaptiveChartWidgetBuilder == null,
+                    childGenerator: () => LayoutBuilder(
+                      builder: _adaptiveChartWidgetBuilder!.builder,
+                    ),
+                    placeholder: AspectRatio(
+                      aspectRatio: 1,
+                      child: Padding(
+                        padding: EdgeInsets.all(8),
+                        child: Container(
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            color: Colors.black,
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
                       ),
-                      Text(
-                        "${_minPeriod?.value.get()} ${CarbonIntensityChartGeneratorFactory.unit}",
-                        style: StyleComponents.smallText,
-                      ),
-                      SizedBox(height: 20),
-                    ],
+                    ),
                   ),
+                  SizedBox(height: 20),
+                  ShimmerLoading(
+                    isLoading: _minPeriod == null,
+                    childGenerator: () => Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text("Next lowest:"),
+                        Text(
+                          _minPeriod!.prettyPrintPeriod(),
+                          style: StyleComponents.smallText,
+                        ),
+                        Text(
+                          "${_minPeriod?.value.get()} ${CarbonIntensityChartGeneratorFactory.unit}",
+                          style: StyleComponents.smallText,
+                        ),
+                        SizedBox(height: 20),
+                      ],
+                    ),
+                    placeholder: Padding(
+                      padding: EdgeInsets.all(8),
+                      child: Container(
+                        width: double.infinity,
+                        height: 60,
+                        decoration: BoxDecoration(
+                          color: Colors.black,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
             const SizedBox(height: 40),
             StyleComponents.headlineTextWrapper(
               "Generation Mix",

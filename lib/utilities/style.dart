@@ -69,6 +69,20 @@ class StyleComponents {
     );
   }
 
+  LinearGradient shimmerGradient() {
+    return LinearGradient(
+      colors: [
+        _theme.colorScheme.surfaceDim,
+        _theme.colorScheme.surfaceBright,
+        _theme.colorScheme.surfaceContainer,
+      ],
+      stops: [0.1, 0.3, 0.4],
+      begin: Alignment(-1.0, -0.3),
+      end: Alignment(1.0, 0.3),
+      tileMode: TileMode.clamp,
+    );
+  }
+
   static Widget headlineTextWrapper(String text, ThemeData theme) {
     final textStyle = theme.textTheme.displayLarge!.copyWith(
       color: theme.colorScheme.primary,
