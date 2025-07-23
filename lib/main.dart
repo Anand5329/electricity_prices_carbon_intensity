@@ -1,5 +1,6 @@
 import 'package:electricity_prices_and_carbon_intensity/widgets/electricty.dart';
 import 'package:electricity_prices_and_carbon_intensity/widgets/carbonIntensity.dart';
+import 'package:electricity_prices_and_carbon_intensity/widgets/regionaldata.dart';
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
 
@@ -39,7 +40,11 @@ class _MyHomePageState extends State<MyHomePage> {
   late final List<NavigationDestination> _destinations = [
     NavigationDestination(
       icon: Icon(Icons.co2_sharp),
-      label: "Carbon Intensity",
+      label: "Carbon Intensity (National)",
+    ),
+    NavigationDestination(
+      icon: Icon(Icons.co2_sharp),
+      label: "Carbon Intensity (Regional)",
     ),
     NavigationDestination(
       icon: Icon(Icons.bolt_sharp),
@@ -75,6 +80,9 @@ class _MyHomePageState extends State<MyHomePage> {
         page = CarbonIntensityPage();
         break;
       case 1:
+        page = RegionalPage();
+        break;
+      case 2:
         page = ElectricityPricesPage();
         break;
       default:

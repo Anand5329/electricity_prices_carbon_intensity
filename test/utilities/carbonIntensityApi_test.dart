@@ -1,4 +1,5 @@
 import 'package:electricity_prices_and_carbon_intensity/utilities/carbonIntensityApiCaller.dart';
+import 'package:electricity_prices_and_carbon_intensity/utilities/regionalCarbonIntensityGenerationMixApiCaller.dart';
 import 'package:logger/logger.dart';
 import 'package:test/test.dart';
 import 'package:electricity_prices_and_carbon_intensity/utilities/httpclient.dart';
@@ -138,8 +139,8 @@ void main() {
     });
   });
 
-  RegionalCarbonIntensityCaller regionalClient =
-      RegionalCarbonIntensityCaller();
+  RegionalCarbonIntensityGenerationMixCaller regionalClient =
+      RegionalCarbonIntensityGenerationMixCaller();
 
   group('Testing RegionalCarbonIntensityCaller', () {
     test('get current intensity for london using postcode', () async {
@@ -151,8 +152,8 @@ void main() {
       expect(period.from.isBefore(now), true);
       expect(period.to.isBefore(now), true);
 
-      RegionalIntensityData regionalIntensityData = await regionalClient
-          .getRegionalIntensityDataForPostcode("N5");
+      RegionalData regionalIntensityData = await regionalClient
+          .getRegionalDataForPostcode("N5");
 
       expect(regionalIntensityData.dnoregion, "UKPN London");
       expect(regionalIntensityData.shortname, "London");
@@ -168,8 +169,8 @@ void main() {
       expect(period.from.isBefore(now), true);
       expect(period.to.isBefore(now), true);
 
-      RegionalIntensityData regionalIntensityData = await regionalClient
-          .getRegionalIntensityDataForRegionId(13);
+      RegionalData regionalIntensityData = await regionalClient
+          .getRegionalDataForRegionId(13);
 
       expect(regionalIntensityData.dnoregion, "UKPN London");
       expect(regionalIntensityData.shortname, "London");
