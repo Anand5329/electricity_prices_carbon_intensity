@@ -72,14 +72,14 @@ class GenerationMixApiCaller extends ApiCaller {
 }
 
 enum EnergySource {
-  biomass("biomass"),
-  imports("imports"),
-  gas("gas"),
-  nuclear("nuclear"),
-  other("other"),
-  hydro("hydro"),
   solar("solar"),
   wind("wind"),
+  nuclear("nuclear"),
+  hydro("hydro"),
+  biomass("biomass"),
+  gas("gas"),
+  imports("imports"),
+  other("other"),
   coal("coal");
 
   final String _type;
@@ -143,8 +143,9 @@ class GenerationFactor {
 /// to store the temporal generation mix
 class GenerationMix implements Comparable<GenerationMix> {
   final List<GenerationFactor> factors;
+  Map<EnergySource, double>? map;
 
-  const GenerationMix({required this.factors});
+  GenerationMix({required this.factors});
 
   factory GenerationMix.fromJson(Map<String, dynamic> json) {
     List<dynamic> factors = json["generationmix"];
@@ -161,9 +162,15 @@ class GenerationMix implements Comparable<GenerationMix> {
   }
 
   Map<EnergySource, double> toMap() {
-    return Map.fromEntries(
+    if (map != null) {
+      return map!;
+    }
+
+    map = Map.fromEntries(
       factors.map((factor) => MapEntry(factor.energySource, factor.perc)),
     );
+
+    return map!;
   }
 
   static final GenerationMix uniform = GenerationMix(
