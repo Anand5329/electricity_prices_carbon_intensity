@@ -84,12 +84,12 @@ abstract class PieChartGeneratorFactory<T> {
     List<PieChartSectionData> sections = [];
     List<T> keys = chartValues.keys.toList();
     for (var i = 0; i < chartValues.length; i++) {
-      double radius = 120;
+      double radius = 100;
       double fontSize = 16;
       T factor = keys[i];
-      String title = factor.toString();
+      String title = "";
       if (touchedIndex == i) {
-        radius = 150;
+        radius = 120;
         fontSize = 20;
         title =
             "${factor.toString()}\n${chartValues[factor]!.toStringAsFixed(2)}%";
