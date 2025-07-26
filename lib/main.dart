@@ -54,11 +54,22 @@ class _MyHomePageState extends State<MyHomePage> {
   late final List<NavigationRailDestination> _railDestinations;
   int _selectedIndex = 0;
 
+  late final List<Widget> pages;
+  late final PageController _pageController;
+
   static const int _widthThreshold = 600;
   static const int _largeWidthThreshold = 1000;
 
   @override
   void initState() {
+    super.initState();
+    pages = [
+      const CarbonIntensityPage(),
+      const RegionalPage(),
+      const ElectricityPricesPage(),
+    ];
+    _pageController = PageController(initialPage: _selectedIndex);
+
     _railDestinations = _destinations
         .map(
           (d) => NavigationRailDestination(icon: d.icon, label: Text(d.label)),
@@ -69,27 +80,17 @@ class _MyHomePageState extends State<MyHomePage> {
   void _onDestinationSelected(int index) {
     setState(() {
       _selectedIndex = index;
+      _pageController.jumpToPage(_selectedIndex);
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    Widget page;
-    switch (_selectedIndex) {
-      case 0:
-        page = CarbonIntensityPage();
-        break;
-      case 1:
-        page = RegionalPage();
-        break;
-      case 2:
-        page = ElectricityPricesPage();
-        break;
-      default:
-        throw UnimplementedError(
-          "Unimplemented page for index $_selectedIndex",
-        );
-    }
+    Widget page = PageView(
+      controller: _pageController,
+      physics: NeverScrollableScrollPhysics(),
+      children: pages,
+    );
     return LayoutBuilder(
       builder: (context, constraints) {
         return constraints.maxWidth < _widthThreshold

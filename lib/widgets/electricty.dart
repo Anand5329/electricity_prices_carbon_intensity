@@ -21,7 +21,8 @@ class ElectricityPricesPage extends StatefulWidget {
   State<ElectricityPricesPage> createState() => _ElectricityPricesPageState();
 }
 
-class _ElectricityPricesPageState extends State<ElectricityPricesPage> {
+class _ElectricityPricesPageState extends State<ElectricityPricesPage>
+    with AutomaticKeepAliveClientMixin<ElectricityPricesPage> {
   static Product defaultProduct = Product(
     "Agile Octopus October 2024 v1",
     DateTime.now().toUtc(),
@@ -47,6 +48,17 @@ class _ElectricityPricesPageState extends State<ElectricityPricesPage> {
   late ElectricityPricesChartGeneratorFactory _chartGeneratorFactory;
   AdaptiveChartWidgetBuilder? _adaptiveChartWidgetBuilder;
   PeriodData<Rate>? _minPeriod;
+
+  bool _keepAlive = true;
+
+  bool get keepAlive => _keepAlive;
+  set keepAlive(bool value) {
+    _keepAlive = value;
+    updateKeepAlive();
+  }
+
+  @override
+  bool get wantKeepAlive => keepAlive;
 
   @override
   void initState() {
@@ -104,6 +116,7 @@ class _ElectricityPricesPageState extends State<ElectricityPricesPage> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     StyleComponents style = StyleComponents(Theme.of(context));
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints constraints) {

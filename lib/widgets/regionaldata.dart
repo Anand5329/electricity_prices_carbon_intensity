@@ -19,11 +19,25 @@ class RegionalPage extends StatefulWidget {
   const RegionalPage({super.key, this.title = "Carbon Intensity"});
 
   @override
-  State<RegionalPage> createState() => _RegionalPageState();
+  State<RegionalPage> createState() {
+    return _RegionalPageState();
+  }
 }
 
-class _RegionalPageState extends State<RegionalPage> {
+class _RegionalPageState extends State<RegionalPage>
+    with AutomaticKeepAliveClientMixin<RegionalPage> {
   static const String defaultPostcode = "N1";
+
+  bool _keepAlive = true;
+
+  bool get keepAlive => _keepAlive;
+  set keepAlive(bool value) {
+    _keepAlive = value;
+    updateKeepAlive();
+  }
+
+  @override
+  bool get wantKeepAlive => keepAlive;
 
   late int _counter = 0;
   late PeriodData<GenerationMix> _generation;
@@ -42,6 +56,7 @@ class _RegionalPageState extends State<RegionalPage> {
 
   @override
   void dispose() {
+    keepAlive = false;
     _postcodeController.dispose();
     super.dispose();
   }
@@ -139,6 +154,7 @@ class _RegionalPageState extends State<RegionalPage> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final style = StyleComponents(Theme.of(context));
     return SingleChildScrollView(
       child: Center(
