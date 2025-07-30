@@ -17,12 +17,24 @@ class CarbonIntensityPage extends StatefulWidget {
   State<CarbonIntensityPage> createState() => _CarbonIntensityPageState();
 }
 
-class _CarbonIntensityPageState extends State<CarbonIntensityPage> {
+class _CarbonIntensityPageState extends State<CarbonIntensityPage>
+    with AutomaticKeepAliveClientMixin<CarbonIntensityPage> {
   late int _counter = 0;
   final _caller = CarbonIntensityCaller();
   late CarbonIntensityChartGeneratorFactory _chartGeneratorFactory;
   AdaptiveChartWidgetBuilder? _adaptiveChartWidgetBuilder;
   PeriodData<IntensityData>? _minPeriod;
+
+  bool _keepAlive = true;
+
+  bool get keepAlive => _keepAlive;
+  set keepAlive(bool value) {
+    _keepAlive = value;
+    updateKeepAlive();
+  }
+
+  @override
+  bool get wantKeepAlive => keepAlive;
 
   void _resetCounter() {
     setState(() {
@@ -77,6 +89,7 @@ class _CarbonIntensityPageState extends State<CarbonIntensityPage> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return SingleChildScrollView(
       child: Center(
         child: Column(
@@ -173,22 +186,19 @@ class CarbonIntensityChartGeneratorFactory
       from: today,
       modifier: FromModifier.past24,
     );
-    DateTime time1 = DateTime.now().toUtc();
+
     List<PeriodData<IntensityData>> future = await this.caller.getIntensityFrom(
       from: today,
       modifier: FromModifier.forward24,
     );
-    DateTime time2 = DateTime.now().toUtc();
+
     int currentIntensityIndex = _getCurrentIntensityIndex(past);
 
     List<PeriodData<IntensityData>> all = List.from(past);
     all.addAll(future);
 
     List<FlSpot> spots = convertToChartData(all);
-    DateTime time3 = DateTime.now().toUtc();
-    // logger.d(today.difference(time1));
-    // logger.d(time1.difference(time2));
-    // logger.d(time2.difference(time3));
+
     return (BuildContext context, DeviceSize size) {
       this.backgroundColor = Theme.of(context).colorScheme.surface;
       return getChartData(spots, currentIntensityIndex, size);
