@@ -36,6 +36,8 @@ class MyHomePage extends StatefulWidget {
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
+// TODO: add pages for historical data
+// TODO: add gas prices
 class _MyHomePageState extends State<MyHomePage> {
   late final List<NavigationDestination> _destinations = [
     NavigationDestination(

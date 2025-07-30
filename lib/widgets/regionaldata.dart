@@ -6,7 +6,9 @@ import 'package:electricity_prices_and_carbon_intensity/widgets/pieChart.dart';
 import 'package:electricity_prices_and_carbon_intensity/widgets/shimmerLoad.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart';
 import 'package:logger/logger.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../utilities/carbonIntensityApiCaller.dart';
 import '../utilities/regionalCarbonIntensityGenerationMixApiCaller.dart';
 import 'animatedCounter.dart';
@@ -26,6 +28,8 @@ class RegionalPage extends StatefulWidget {
 
 class _RegionalPageState extends State<RegionalPage>
     with AutomaticKeepAliveClientMixin<RegionalPage> {
+  // TODO: make this user customisable
+  static const String savedPostcodeString = "SAVED_POSTCODE";
   static const String defaultPostcode = "N1";
 
   bool _keepAlive = true;
@@ -38,6 +42,8 @@ class _RegionalPageState extends State<RegionalPage>
 
   @override
   bool get wantKeepAlive => keepAlive;
+
+  SharedPreferences? _dataStore = null;
 
   late int _counter = 0;
   late PeriodData<GenerationMix> _generation;
@@ -56,6 +62,10 @@ class _RegionalPageState extends State<RegionalPage>
 
   @override
   void dispose() {
+    String postcodeToSave = _postcodeController.text;
+    if (postcodeToSave.length > 0) {
+      _dataStore?.setString(savedPostcodeString, postcodeToSave);
+    }
     keepAlive = false;
     _postcodeController.dispose();
     super.dispose();
@@ -69,12 +79,15 @@ class _RegionalPageState extends State<RegionalPage>
 
   void _fetchPostcode() {
     String text = _postcodeController.text;
+    // String savedPostcode = defaultPostcode;
+    String savedPostcode = text;
     if (text.length == 0) {
-      text = defaultPostcode;
-      setState(() {
-        _postcodeController.text = defaultPostcode;
-      });
+      savedPostcode =
+          _dataStore?.getString(savedPostcodeString) ?? defaultPostcode;
     }
+    setState(() {
+      _postcodeController.text = savedPostcode;
+    });
     _caller.postcode = _postcodeController.text;
   }
 
@@ -141,9 +154,14 @@ class _RegionalPageState extends State<RegionalPage>
   @override
   void initState() {
     super.initState();
+    _initAsyncHelper();
     _regionalChartGeneratorFactory =
         RegionalCarbonIntensityChartGeneratorFactory(_caller, setState);
     _refreshAsync();
+  }
+
+  void _initAsyncHelper() async {
+    _dataStore = await SharedPreferences.getInstance();
   }
 
   void _refreshAsync() async {
