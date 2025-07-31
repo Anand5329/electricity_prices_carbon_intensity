@@ -18,6 +18,7 @@ import 'carbonIntensity.dart';
 var logger = Logger(filter: null, printer: PrettyPrinter(), output: null);
 
 class RegionalPage extends StatefulWidget {
+  static const String saveFilePath = "postcodeCache.txt";
   final String title;
   const RegionalPage({super.key, this.title = "Carbon Intensity"});
 
@@ -29,7 +30,6 @@ class RegionalPage extends StatefulWidget {
 
 class _RegionalPageState extends State<RegionalPage>
     with AutomaticKeepAliveClientMixin<RegionalPage> {
-  static const String saveFilePath = "postcodeCache.txt";
   static const String defaultPostcode = "N1";
 
   bool _keepAlive = true;
@@ -82,17 +82,11 @@ class _RegionalPageState extends State<RegionalPage>
       if (savedPostcode.isEmpty) {
         savedPostcode = defaultPostcode;
       }
-    } else if (savedPostcode != defaultPostcode) {
-      _saveFile = await _savePostcodetoFile(savedPostcode);
     }
     setState(() {
       _postcodeController.text = savedPostcode;
     });
     _caller.postcode = _postcodeController.text;
-  }
-
-  Future<File> _savePostcodetoFile(String postcode) {
-    return _saveFile.writeAsString(postcode);
   }
 
   Future<String> _readSavedPostcode() async {
@@ -175,7 +169,7 @@ class _RegionalPageState extends State<RegionalPage>
 
   void _initAsyncHelper() async {
     _docDir = (await getApplicationDocumentsDirectory()).path;
-    _saveFile = File("$_docDir/$saveFilePath");
+    _saveFile = File("$_docDir/${RegionalPage.saveFilePath}");
     _refreshAsync();
   }
 
