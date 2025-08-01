@@ -1,6 +1,6 @@
 import 'package:electricity_prices_and_carbon_intensity/utilities/httpclient.dart';
 import 'package:electricity_prices_and_carbon_intensity/utilities/octopusApiCaller.dart';
-import 'package:electricity_prices_and_carbon_intensity/widgets/electricty.dart';
+import 'package:electricity_prices_and_carbon_intensity/widgets/electricity.dart';
 import 'package:test/test.dart';
 import 'package:electricity_prices_and_carbon_intensity/utilities/electricityApiCaller.dart';
 
