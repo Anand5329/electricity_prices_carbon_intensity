@@ -1,4 +1,5 @@
 import 'package:electricity_prices_and_carbon_intensity/utilities/httpclient.dart';
+import 'package:electricity_prices_and_carbon_intensity/utilities/octopusApiCaller.dart';
 import 'package:electricity_prices_and_carbon_intensity/widgets/electricty.dart';
 import 'package:test/test.dart';
 import 'package:electricity_prices_and_carbon_intensity/utilities/electricityApiCaller.dart';
@@ -33,7 +34,7 @@ void main() {
     test('get tariff rate from', () async {
       DateTime from = DateTime(2025, 3, 9, 11, 30);
       DateTime to = DateTime(2025, 3, 9, 19, 30);
-      List<PeriodData<Rate>> rates = await client.getTariffsFrom(
+      List<PeriodData<Rate>> rates = await client.getGenericTariffsFrom(
         productCode: productCode,
         tariffCode: tariffCode,
         from,
@@ -41,7 +42,10 @@ void main() {
       );
       expect(rates.length, 16);
 
-      List<PeriodData<Rate>> rates2 = await client.getTariffsFrom(from, to: to);
+      List<PeriodData<Rate>> rates2 = await client.getGenericTariffsFrom(
+        from,
+        to: to,
+      );
       expect(rates, rates2);
     });
 

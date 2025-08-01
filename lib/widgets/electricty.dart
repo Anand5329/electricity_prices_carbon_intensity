@@ -6,6 +6,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
 
+import '../utilities/octopusApiCaller.dart';
 import 'animatedCounter.dart';
 
 var logger = Logger(filter: null, printer: PrettyPrinter(), output: null);
@@ -32,6 +33,7 @@ class _ElectricityPricesPageState extends State<ElectricityPricesPage>
     "_C",
     ElectricityPricesPage.defaultTariffCode,
     "",
+    true,
   );
 
   static const double _widthThreshold = 600;
@@ -298,7 +300,7 @@ class ElectricityPricesChartGeneratorFactory
   getChartGenerator() async {
     DateTime yesterday = DateTime.now().toUtc().subtract(Duration(days: 1));
     DateTime tomorrow = yesterday.add(Duration(days: 2));
-    List<PeriodData<Rate>> rates = await _caller.getTariffsFrom(
+    List<PeriodData<Rate>> rates = await _caller.getGenericTariffsFrom(
       productCode: productCode,
       tariffCode: tariffCode,
       yesterday,
