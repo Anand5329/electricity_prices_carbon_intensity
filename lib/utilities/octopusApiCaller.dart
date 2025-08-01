@@ -1,5 +1,5 @@
 import 'package:electricity_prices_and_carbon_intensity/utilities/httpclient.dart';
-import 'package:electricity_prices_and_carbon_intensity/utilities/minimumForecaster.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:http/http.dart';
 import 'dart:convert';
 import 'package:intl/intl.dart';
@@ -7,15 +7,13 @@ import 'package:logger/logger.dart';
 
 var logger = Logger(filter: null, printer: PrettyPrinter(), output: null);
 
-abstract class OctopusApiCaller extends ApiCaller {
+abstract base class OctopusApiCaller extends ApiCaller {
   static const String _baseUrl = "api.octopus.energy";
   static const String _apiPostFix = "v1/";
   static const String _apiKey = "";
   static final Map<String, String> _authenticationHeader = <String, String>{
     "Authorization": _apiKey,
   };
-
-  static const String _electricityTariffString = "electricity-tariffs";
 
   static const String _products = "products";
 
@@ -35,6 +33,10 @@ abstract class OctopusApiCaller extends ApiCaller {
   /// the tariff code that will be used on subsequent calls if none passed
   String tariffCode;
 
+  /// contains full products at the time when _initProducts was last called with
+  /// availableAt or when called the first time
+  List<Product>? _fullProducts;
+
   OctopusApiCaller(this.productCode, this.tariffCode) : super(_baseUrl);
 
   Future<Response> _get(String endpoint, {Map<String, dynamic>? queryParams}) {
@@ -45,10 +47,46 @@ abstract class OctopusApiCaller extends ApiCaller {
     );
   }
 
+  Future<List<Product>> _initProducts({DateTime? availableAt}) async {
+    if (_fullProducts != null && availableAt == null) {
+      return _fullProducts!;
+    }
+    _fullProducts = [];
+    List<Product> allProducts = await getAllProducts();
+    for (var product in allProducts) {
+      Product fullProduct = await getProductWithCode(code: product.code);
+      _fullProducts!.add(fullProduct);
+    }
+    return _fullProducts!;
+  }
+
+  /// fetches fullProducts that have valid tariffs
+  ///
+  /// availableAt should be in the UTC timezone
+  Future<List<Product>> getProducts({DateTime? availableAt});
+
+  /// fetches specific products that have valid tariffs of type passed in
+  ///
+  /// availableAt should be in the UTC timezone
+  @protected
+  Future<List<Product>> getProductsOf(
+    TariffType tariffType, {
+    DateTime? availableAt,
+  }) async {
+    List<Product> allProducts = await _initProducts(availableAt: availableAt);
+    return allProducts
+        .where(
+          (product) => product.tariffCodes
+              .where((tariff) => tariff.type == tariffType)
+              .isNotEmpty,
+        )
+        .toList(growable: false);
+  }
+
   /// fetches the valid products available at given availableAt time
   ///
   /// availableAt should be in the UTC timezone
-  Future<List<Product>> getProducts({DateTime? availableAt}) async {
+  Future<List<Product>> getAllProducts({DateTime? availableAt}) async {
     final String endpoint = "$_products/";
     final Map<String, dynamic> queryParams = {};
     if (availableAt != null) {
@@ -105,19 +143,19 @@ abstract class OctopusApiCaller extends ApiCaller {
   /// Can optionally pass a to date time that will return tariffs until that time (exclusive)
   /// Can optionally pass a RateType to rateType for type of rates fetched
   /// All date times must be in the UTC timezone
+  @protected
   Future<List<PeriodData<Rate>>> getGenericTariffsFrom(
     DateTime from, {
     String? productCode,
-    String? tariffString,
+    required TariffType tariffType,
     String? tariffCode,
     DateTime? to,
     RateType rateType = RateType.standardUnitRate,
   }) async {
     productCode = productCode ?? this.productCode;
-    tariffString = tariffString ?? _electricityTariffString;
     tariffCode = tariffCode ?? this.tariffCode;
     String endpoint =
-        "$_products/$productCode/$tariffString/$tariffCode/$rateType/";
+        "$_products/$productCode/$tariffType/$tariffCode/$rateType/";
     Map<String, dynamic> queryParams = <String, dynamic>{
       _periodFrom: from.toIso8601String(),
     };
@@ -130,7 +168,7 @@ abstract class OctopusApiCaller extends ApiCaller {
       return _parseRates(response);
     } else {
       throw Exception(
-        "$tariffString rates not found for product $productCode with tariff band $tariffCode from $from"
+        "$tariffType rates not found for product $productCode with tariff band $tariffCode from $from"
         "\nError: ${response.body}",
       );
     }
@@ -199,26 +237,30 @@ class Product {
   }
 
   static void _addTariffCodes(json, Product product) {
-    _addTariffCodesHelper(json, product, tariffsKey: electricityTariffsKey);
-    _addTariffCodesHelper(json, product, tariffsKey: gasTariffsKey);
+    _addTariffCodesHelper(json, product, tariffType: TariffType.electricity);
+    _addTariffCodesHelper(json, product, tariffType: TariffType.gas);
   }
 
   static void _addTariffCodesHelper(
     json,
     Product product, {
-    required String tariffsKey,
+    required TariffType tariffType,
   }) {
+    String tariffsKey;
+    switch (tariffType) {
+      case TariffType.electricity:
+        tariffsKey = electricityTariffsKey;
+        break;
+      case TariffType.gas:
+        tariffsKey = gasTariffsKey;
+        break;
+    }
     if (json is Map && json.containsKey(tariffsKey)) {
       Map<String, dynamic> tariffs = json[tariffsKey];
       tariffs.forEach((name, payment) {
         payment.forEach((method, tariff) {
           product.tariffCodes.add(
-            Tariff(
-              name,
-              tariff[Tariff.codeKey],
-              method,
-              tariffsKey == electricityTariffsKey,
-            ),
+            Tariff(name, tariff[Tariff.codeKey], method, tariffType),
           );
         });
       });
@@ -232,15 +274,15 @@ class Tariff {
   final String name;
   final String code;
   final String paymentMethod;
-  final bool isElectricity;
+  final TariffType type;
 
-  Tariff(this.name, this.code, this.paymentMethod, this.isElectricity);
+  Tariff(this.name, this.code, this.paymentMethod, this.type);
 
   bool operator ==(Object other) {
     return other is Tariff &&
         this.code == other.code &&
         this.name == other.name &&
-        this.isElectricity == other.isElectricity &&
+        this.type == other.type &&
         this.paymentMethod == other.paymentMethod;
   }
 
@@ -248,8 +290,22 @@ class Tariff {
   int get hashCode =>
       37 * code.hashCode +
       73 * name.hashCode +
-      103 * isElectricity.hashCode +
+      103 * type.hashCode +
       113 * paymentMethod.hashCode;
+}
+
+enum TariffType {
+  gas("gas-tariffs"),
+  electricity("electricity-tariffs");
+
+  const TariffType(this.stringRep);
+
+  final String stringRep;
+
+  @override
+  String toString() {
+    return stringRep;
+  }
 }
 
 enum RateType {

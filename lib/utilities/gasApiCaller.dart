@@ -5,16 +5,15 @@ import 'package:logger/logger.dart';
 
 var logger = Logger(filter: null, printer: PrettyPrinter(), output: null);
 
-final class ElectricityApiCaller extends OctopusApiCaller
-    with MinimumForecaster<Rate> {
-  ElectricityApiCaller(super.productCode, super.tariffCode);
+final class GasApiCaller extends OctopusApiCaller with MinimumForecaster<Rate> {
+  GasApiCaller(super.productCode, super.tariffCode);
 
   /// fetches fullProducts that have valid tariffs
   ///
   /// availableAt should be in the UTC timezone
   @override
   Future<List<Product>> getProducts({DateTime? availableAt}) {
-    return getProductsOf(TariffType.electricity, availableAt: availableAt);
+    return getProductsOf(TariffType.gas, availableAt: availableAt);
   }
 
   /// fetches the current price for the given product and tariff code
@@ -51,7 +50,7 @@ final class ElectricityApiCaller extends OctopusApiCaller
     return super.getGenericTariffsFrom(
       from,
       productCode: productCode,
-      tariffType: TariffType.electricity,
+      tariffType: TariffType.gas,
       tariffCode: tariffCode,
       to: to,
       rateType: rateType,

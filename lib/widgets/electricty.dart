@@ -33,7 +33,7 @@ class _ElectricityPricesPageState extends State<ElectricityPricesPage>
     "_C",
     ElectricityPricesPage.defaultTariffCode,
     "",
-    true,
+    TariffType.electricity,
   );
 
   static const double _widthThreshold = 600;
@@ -82,7 +82,7 @@ class _ElectricityPricesPageState extends State<ElectricityPricesPage>
   }
 
   Future<void> _setupProductsAndTariffs() async {
-    _productList = await _caller.getProducts();
+    _productList = await _caller.getAllProducts();
     _refreshTariffCodeList();
   }
 
@@ -289,7 +289,7 @@ class ElectricityPricesChartGeneratorFactory
   FlSpot convertPeriodToSpot(PeriodData<Rate> period) {
     return FlSpot(
       (period.from.toLocal().millisecondsSinceEpoch +
-              period.to.toLocal().millisecondsSinceEpoch) /
+              period.to!.toLocal().millisecondsSinceEpoch) /
           2,
       period.value.valueIncVat,
     );
@@ -300,7 +300,7 @@ class ElectricityPricesChartGeneratorFactory
   getChartGenerator() async {
     DateTime yesterday = DateTime.now().toUtc().subtract(Duration(days: 1));
     DateTime tomorrow = yesterday.add(Duration(days: 2));
-    List<PeriodData<Rate>> rates = await _caller.getGenericTariffsFrom(
+    List<PeriodData<Rate>> rates = await _caller.getTariffsFrom(
       productCode: productCode,
       tariffCode: tariffCode,
       yesterday,
