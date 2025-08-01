@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:electricity_prices_and_carbon_intensity/utilities/generationMixApiCaller.dart';
 import 'package:electricity_prices_and_carbon_intensity/utilities/style.dart';
 import 'package:electricity_prices_and_carbon_intensity/widgets/chart.dart';
@@ -7,6 +9,7 @@ import 'package:electricity_prices_and_carbon_intensity/widgets/shimmerLoad.dart
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
+import 'package:path_provider/path_provider.dart';
 import '../utilities/carbonIntensityApiCaller.dart';
 import '../utilities/regionalCarbonIntensityGenerationMixApiCaller.dart';
 import 'animatedCounter.dart';
@@ -15,6 +18,7 @@ import 'carbonIntensity.dart';
 var logger = Logger(filter: null, printer: PrettyPrinter(), output: null);
 
 class RegionalPage extends StatefulWidget {
+  static const String saveFilePath = "postcodeCache.txt";
   final String title;
   const RegionalPage({super.key, this.title = "Carbon Intensity"});
 
@@ -38,6 +42,9 @@ class _RegionalPageState extends State<RegionalPage>
 
   @override
   bool get wantKeepAlive => keepAlive;
+
+  late String _docDir;
+  late File _saveFile;
 
   late int _counter = 0;
   late PeriodData<GenerationMix> _generation;
@@ -67,22 +74,36 @@ class _RegionalPageState extends State<RegionalPage>
     });
   }
 
-  void _fetchPostcode() {
+  Future<void> _fetchPostcode() async {
     String text = _postcodeController.text;
-    if (text.length == 0) {
-      text = defaultPostcode;
-      setState(() {
-        _postcodeController.text = defaultPostcode;
-      });
+    String savedPostcode = text;
+    if (text.isEmpty) {
+      savedPostcode = await _readSavedPostcode();
+      if (savedPostcode.isEmpty) {
+        savedPostcode = defaultPostcode;
+      }
     }
+    setState(() {
+      _postcodeController.text = savedPostcode;
+    });
     _caller.postcode = _postcodeController.text;
+  }
+
+  Future<String> _readSavedPostcode() async {
+    try {
+      final contents = await _saveFile.readAsString();
+      return contents;
+    } catch (e) {
+      logger.e(e);
+      return defaultPostcode;
+    }
   }
 
   Future<void> _refreshCarbonIntensityAndGenerationMix() async {
     _resetCounter();
     _setLoading();
     int ci = -1;
-    _fetchPostcode();
+    await _fetchPostcode();
 
     final regional = await _caller.getRegionalDataForPostcode(
       _caller.postcode!,
@@ -115,7 +136,7 @@ class _RegionalPageState extends State<RegionalPage>
   }
 
   Future<void> _refreshChartData() async {
-    _fetchPostcode();
+    await _fetchPostcode();
     final _chartGenerator = await _regionalChartGeneratorFactory
         .getChartGenerator();
     final minPeriod = await _caller.forecastMinimum();
@@ -126,7 +147,7 @@ class _RegionalPageState extends State<RegionalPage>
   }
 
   Future<void> _refreshPieChartData() async {
-    _fetchPostcode();
+    await _fetchPostcode();
     _regionalPieChartGeneratorFactory =
         RegionalGenerationMixChartGeneratorFactory(_generation.value, setState);
     final _pieChartGenerator = await _regionalPieChartGeneratorFactory
@@ -143,6 +164,12 @@ class _RegionalPageState extends State<RegionalPage>
     super.initState();
     _regionalChartGeneratorFactory =
         RegionalCarbonIntensityChartGeneratorFactory(_caller, setState);
+    _initAsyncHelper();
+  }
+
+  void _initAsyncHelper() async {
+    _docDir = (await getApplicationDocumentsDirectory()).path;
+    _saveFile = File("$_docDir/${RegionalPage.saveFilePath}");
     _refreshAsync();
   }
 

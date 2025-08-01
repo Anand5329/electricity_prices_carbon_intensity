@@ -1,4 +1,4 @@
-import com.android.build.gradle.internal.cxx.configure.gradleLocalProperties
+
 
 plugins {
     id("com.android.application")
@@ -11,7 +11,7 @@ plugins {
 android {
     namespace = "com.example.electricity_prices_and_carbon_intensity"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    ndkVersion = "27.0.12077973"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
