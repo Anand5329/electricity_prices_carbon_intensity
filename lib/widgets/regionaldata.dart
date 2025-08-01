@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 import 'package:electricity_prices_and_carbon_intensity/utilities/generationMixApiCaller.dart';
 import 'package:electricity_prices_and_carbon_intensity/utilities/style.dart';
@@ -168,8 +169,10 @@ class _RegionalPageState extends State<RegionalPage>
   }
 
   void _initAsyncHelper() async {
-    _docDir = (await getApplicationDocumentsDirectory()).path;
-    _saveFile = File("$_docDir/${RegionalPage.saveFilePath}");
+    if (!kIsWeb) {
+      _docDir = (await getApplicationDocumentsDirectory()).path;
+      _saveFile = File("$_docDir/${RegionalPage.saveFilePath}");
+    }
     _refreshAsync();
   }
 

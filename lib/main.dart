@@ -3,6 +3,7 @@ import 'package:electricity_prices_and_carbon_intensity/widgets/carbonIntensity.
 import 'package:electricity_prices_and_carbon_intensity/widgets/gas.dart';
 import 'package:electricity_prices_and_carbon_intensity/widgets/regionaldata.dart';
 import 'package:electricity_prices_and_carbon_intensity/widgets/settings.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
 
@@ -51,7 +52,12 @@ class _MyHomePageState extends State<MyHomePage> {
       icon: Icon(Icons.local_fire_department_sharp),
       label: "Gas Prices",
     ),
-    NavigationDestination(icon: Icon(Icons.settings), label: "Settings"),
+    // disabled for web devices since saving not supported
+    NavigationDestination(
+      icon: Icon(Icons.settings),
+      label: "Settings",
+      enabled: !kIsWeb,
+    ),
   ];
   late final List<NavigationRailDestination> _railDestinations;
   int _selectedIndex = 0;
@@ -76,7 +82,11 @@ class _MyHomePageState extends State<MyHomePage> {
 
     _railDestinations = _destinations
         .map(
-          (d) => NavigationRailDestination(icon: d.icon, label: Text(d.label)),
+          (d) => NavigationRailDestination(
+            icon: d.icon,
+            label: Text(d.label),
+            disabled: !d.enabled,
+          ),
         )
         .toList();
   }
