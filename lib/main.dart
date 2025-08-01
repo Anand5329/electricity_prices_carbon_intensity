@@ -1,5 +1,6 @@
-import 'package:electricity_prices_and_carbon_intensity/widgets/electricty.dart';
+import 'package:electricity_prices_and_carbon_intensity/widgets/electricity.dart';
 import 'package:electricity_prices_and_carbon_intensity/widgets/carbonIntensity.dart';
+import 'package:electricity_prices_and_carbon_intensity/widgets/gas.dart';
 import 'package:electricity_prices_and_carbon_intensity/widgets/regionaldata.dart';
 import 'package:electricity_prices_and_carbon_intensity/widgets/settings.dart';
 import 'package:flutter/material.dart';
@@ -38,14 +39,17 @@ class MyHomePage extends StatefulWidget {
 }
 
 // TODO: add pages for historical data
-// TODO: add gas prices
 class _MyHomePageState extends State<MyHomePage> {
   late final List<NavigationDestination> _destinations = [
-    NavigationDestination(icon: Icon(Icons.co2_sharp), label: "National CI"),
+    // NavigationDestination(icon: Icon(Icons.co2_sharp), label: "National CI"),
     NavigationDestination(icon: Icon(Icons.co2_sharp), label: "Regional CI"),
     NavigationDestination(
       icon: Icon(Icons.bolt_sharp),
       label: "Electricity Prices",
+    ),
+    NavigationDestination(
+      icon: Icon(Icons.local_fire_department_sharp),
+      label: "Gas Prices",
     ),
     NavigationDestination(icon: Icon(Icons.settings), label: "Settings"),
   ];
@@ -62,9 +66,10 @@ class _MyHomePageState extends State<MyHomePage> {
   void initState() {
     super.initState();
     pages = [
-      const CarbonIntensityPage(),
+      // const CarbonIntensityPage(),
       const RegionalPage(),
       const ElectricityPricesPage(),
+      const GasPricesPage(),
       const SettingsPage(),
     ];
     _pageController = PageController(initialPage: _selectedIndex);
