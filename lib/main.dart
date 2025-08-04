@@ -1,10 +1,12 @@
 import 'package:electricity_prices_and_carbon_intensity/widgets/electricity.dart';
 import 'package:electricity_prices_and_carbon_intensity/widgets/carbonIntensity.dart';
 import 'package:electricity_prices_and_carbon_intensity/widgets/gas.dart';
+import 'package:electricity_prices_and_carbon_intensity/widgets/historicalCarbonIntensity.dart';
 import 'package:electricity_prices_and_carbon_intensity/widgets/regionaldata.dart';
 import 'package:electricity_prices_and_carbon_intensity/widgets/settings.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl_browser.dart';
 import 'package:logger/logger.dart';
 
 void main() {
@@ -41,9 +43,11 @@ class MyHomePage extends StatefulWidget {
 
 // TODO: add pages for historical data
 class _MyHomePageState extends State<MyHomePage> {
+  // TODO: improve alignment of text on narrow screen devices
   late final List<NavigationDestination> _destinations = [
     // NavigationDestination(icon: Icon(Icons.co2_sharp), label: "National CI"),
     NavigationDestination(icon: Icon(Icons.co2_sharp), label: "Regional CI"),
+    NavigationDestination(icon: Icon(Icons.history_sharp), label: "Historical"),
     NavigationDestination(
       icon: Icon(Icons.bolt_sharp),
       label: "Electricity Prices",
@@ -74,6 +78,7 @@ class _MyHomePageState extends State<MyHomePage> {
     pages = [
       // const CarbonIntensityPage(),
       const RegionalPage(),
+      const HistoricalCarbonIntensityPage(),
       const ElectricityPricesPage(),
       const GasPricesPage(),
       const SettingsPage(),
