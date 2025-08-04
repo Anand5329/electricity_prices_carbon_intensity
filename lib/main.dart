@@ -6,7 +6,6 @@ import 'package:electricity_prices_and_carbon_intensity/widgets/regionaldata.dar
 import 'package:electricity_prices_and_carbon_intensity/widgets/settings.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl_browser.dart';
 import 'package:logger/logger.dart';
 
 void main() {
