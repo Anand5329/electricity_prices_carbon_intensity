@@ -2,10 +2,13 @@ import 'dart:convert';
 
 import 'package:electricity_prices_and_carbon_intensity/utilities/generationMixApiCaller.dart';
 import 'package:http/http.dart';
+import 'package:logger/logger.dart';
 
 import 'carbonIntensityApiCaller.dart';
 import 'httpclient.dart';
 import 'minimumForecaster.dart';
+
+var logger = Logger(filter: null, printer: PrettyPrinter(), output: null);
 
 class RegionalCarbonIntensityGenerationMixCaller extends CarbonIntensityCaller
     with MinimumForecaster<IntensityData> {
@@ -149,6 +152,7 @@ class RegionalCarbonIntensityGenerationMixCaller extends CarbonIntensityCaller
     final response = await getRaw(
       "$_regional${CarbonIntensityCaller.intensity}/$fromString/$modifierString$postfix",
     );
+    // logger.d("$_regional${CarbonIntensityCaller.intensity}/$fromString/$modifierString$postfix");
     return _parseRegionalData(response);
   }
 
