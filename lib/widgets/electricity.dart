@@ -6,6 +6,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
 
+import '../utilities/octopusApiCaller.dart';
 import 'animatedCounter.dart';
 
 var logger = Logger(filter: null, printer: PrettyPrinter(), output: null);
@@ -32,6 +33,7 @@ class _ElectricityPricesPageState extends State<ElectricityPricesPage>
     "_C",
     ElectricityPricesPage.defaultTariffCode,
     "",
+    TariffType.electricity,
   );
 
   static const double _widthThreshold = 600;
@@ -87,7 +89,9 @@ class _ElectricityPricesPageState extends State<ElectricityPricesPage>
   Future<void> _refreshTariffCodeList() async {
     final product = await _caller.getProductWithCode(code: _productCode);
     setState(() {
-      _tariffList = product.tariffCodes;
+      _tariffList = product.tariffCodes
+          .where((tariff) => tariff.type == TariffType.electricity)
+          .toList(growable: false);
     });
   }
 

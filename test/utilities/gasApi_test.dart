@@ -1,16 +1,18 @@
+import 'package:electricity_prices_and_carbon_intensity/utilities/gasApiCaller.dart';
 import 'package:electricity_prices_and_carbon_intensity/utilities/httpclient.dart';
 import 'package:electricity_prices_and_carbon_intensity/utilities/octopusApiCaller.dart';
-import 'package:electricity_prices_and_carbon_intensity/widgets/electricity.dart';
+import 'package:logger/logger.dart';
 import 'package:test/test.dart';
-import 'package:electricity_prices_and_carbon_intensity/utilities/electricityApiCaller.dart';
+
+var logger = Logger(filter: null, printer: PrettyPrinter(), output: null);
 
 void main() {
-  final client = ElectricityApiCaller(
-    ElectricityPricesPage.defaultProductCode,
-    ElectricityPricesPage.defaultTariffCode,
-  );
+  final String productCode = "VAR-BB-23-04-01";
+  final String tariffCode = "G-1R-VAR-BB-23-04-01-P";
 
-  group('Testing electricity api caller', () {
+  final client = GasApiCaller(productCode, tariffCode);
+
+  group('Testing gas api caller', () {
     test('get current products', () async {
       List<Product> products = await client.getProducts();
       DateTime now = DateTime.now();
@@ -18,9 +20,6 @@ void main() {
         expect(product.availableFrom.isBefore(now), true);
       }
     });
-
-    final String productCode = "AGILE-24-10-01";
-    final String tariffCode = "E-1R-AGILE-24-10-01-C";
 
     test('get specific product with code', () async {
       Product product = await client.getProductWithCode(code: productCode);
@@ -40,7 +39,7 @@ void main() {
         from,
         to: to,
       );
-      expect(rates.length, 16);
+      expect(rates.length, 2);
 
       List<PeriodData<Rate>> rates2 = await client.getTariffsFrom(from, to: to);
       expect(rates, rates2);

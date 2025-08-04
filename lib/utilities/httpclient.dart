@@ -44,14 +44,20 @@ class ApiCaller {
 }
 
 class PeriodData<T extends Comparable<T>> implements Comparable<PeriodData<T>> {
+  static final DateTime start = DateTime.utc(-271821, 04, 20);
+  static final DateTime end = DateTime.utc(275760, 09, 13);
   final DateTime from;
   final DateTime to;
   final T value;
 
   PeriodData.raw(this.from, this.to, this.value);
 
-  PeriodData({required String from, required String to, required T value})
-    : this.raw(DateTime.parse(from), DateTime.parse(to), value);
+  PeriodData({String? from, String? to, required T value})
+    : this.raw(
+        from == null ? start : DateTime.parse(from),
+        to == null ? end : DateTime.parse(to),
+        value,
+      );
 
   bool operator ==(Object other) {
     return other is PeriodData<T> &&
