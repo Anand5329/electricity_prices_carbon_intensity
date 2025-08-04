@@ -38,6 +38,7 @@ abstract class ChartGeneratorFactory<T extends Comparable<T>> {
   final TextStyle textStyle;
   final int intervalHoursForLargeWidth;
   final int intervalHours;
+  final int usualNumberOfPoints;
   final double hour;
   final double yInterval;
 
@@ -62,6 +63,7 @@ abstract class ChartGeneratorFactory<T extends Comparable<T>> {
     required this.minY,
     required this.specificGradient,
     this.textStyle = const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+    this.usualNumberOfPoints = 2 * 24 * 2, // 2 days, 1 point every half hour
   });
 
   Future<LineChartData Function(BuildContext, DeviceSize)> getChartGenerator();
@@ -89,7 +91,7 @@ abstract class ChartGeneratorFactory<T extends Comparable<T>> {
       minX: minX,
       maxY: maxY,
       minY: minY,
-      titlesData: _getTitlesData(size),
+      titlesData: _getTitlesData(size, data.length),
       borderData: FlBorderData(show: false),
       lineTouchData: touchData,
       gridData: gridData,
@@ -306,14 +308,17 @@ abstract class ChartGeneratorFactory<T extends Comparable<T>> {
     return colors.last;
   }
 
-  FlTitlesData _getTitlesData(DeviceSize size) {
+  FlTitlesData _getTitlesData(DeviceSize size, int numberOfPoints) {
+    // usually 1, but if many more points, will scale interval
+    double scale = numberOfPoints / usualNumberOfPoints;
     double interval;
+
     switch (size) {
       case DeviceSize.large:
-        interval = hour * intervalHoursForLargeWidth;
+        interval = scale * hour * intervalHoursForLargeWidth;
         break;
       case DeviceSize.small:
-        interval = hour * intervalHours;
+        interval = scale * hour * intervalHours;
         break;
     }
 
@@ -329,7 +334,7 @@ abstract class ChartGeneratorFactory<T extends Comparable<T>> {
           reservedSize: 50,
           interval: interval,
           getTitlesWidget: (timestamp, meta) =>
-              _bottomTitleWidgets(timestamp, meta, size),
+              _bottomTitleWidgets(timestamp, meta, size, scale.round()),
           minIncluded: false,
           maxIncluded: false,
         ),
@@ -361,36 +366,46 @@ abstract class ChartGeneratorFactory<T extends Comparable<T>> {
     double timestamp,
     TitleMeta meta,
     DeviceSize size,
+    int timescale,
   ) {
     return Text(
-      _toReadableTimeStamp(timestamp, includeDateAtMidnight: true, size: size),
+      _toReadableTimeStamp(
+        timestamp,
+        includeDateAtMidnight: true,
+        size: size,
+        timescale: timescale,
+      ),
       style: textStyle,
       textAlign: TextAlign.center,
     );
   }
 
+  // TODO: figure out time format according to locales(day before month)
   String _toReadableTimeStamp(
     double timestamp, {
     bool includeDateAtMidnight = false,
     DeviceSize? size,
+    int timescale = 1,
   }) {
     final datetime = DateTime.fromMillisecondsSinceEpoch(timestamp.round());
     String date = "";
     int newDayThreshold;
     switch (size) {
       case DeviceSize.small:
-        newDayThreshold = intervalHours;
+        newDayThreshold = timescale * intervalHours;
         break;
       case DeviceSize.large:
-        newDayThreshold = intervalHoursForLargeWidth;
+        newDayThreshold = timescale * intervalHoursForLargeWidth;
         break;
       default:
         newDayThreshold = 0;
     }
-    if (includeDateAtMidnight &&
-        datetime.hour < newDayThreshold &&
-        datetime.minute == 0) {
-      date = "\n${DateFormat.yMMMd().format(datetime)}";
+    if (includeDateAtMidnight && datetime.hour < newDayThreshold) {
+      if (timescale <= 1) {
+        date = "\n${DateFormat.yMMMd().format(datetime)}";
+      } else {
+        date = "\n${DateFormat.Md(Intl.systemLocale).format(datetime)}";
+      }
     }
     return DateFormat.Hm().format(datetime) + date;
   }

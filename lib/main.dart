@@ -40,7 +40,6 @@ class MyHomePage extends StatefulWidget {
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
-// TODO: add pages for historical data
 class _MyHomePageState extends State<MyHomePage> {
   // TODO: improve alignment of text on narrow screen devices
   late final List<NavigationDestination> _destinations = [
