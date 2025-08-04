@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:electricity_prices_and_carbon_intensity/widgets/settings.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 
 import 'package:electricity_prices_and_carbon_intensity/utilities/generationMixApiCaller.dart';
@@ -19,7 +20,6 @@ import 'carbonIntensity.dart';
 var logger = Logger(filter: null, printer: PrettyPrinter(), output: null);
 
 class RegionalPage extends StatefulWidget {
-  static const String saveFilePath = "postcodeCache.txt";
   final String title;
   const RegionalPage({super.key, this.title = "Carbon Intensity"});
 
@@ -171,7 +171,7 @@ class _RegionalPageState extends State<RegionalPage>
   void _initAsyncHelper() async {
     if (!kIsWeb) {
       _docDir = (await getApplicationDocumentsDirectory()).path;
-      _saveFile = File("$_docDir/${RegionalPage.saveFilePath}");
+      _saveFile = File("$_docDir/${SettingsPage.saveFilePath}");
     }
     _refreshAsync();
   }

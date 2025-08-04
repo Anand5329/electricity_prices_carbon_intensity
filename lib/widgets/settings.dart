@@ -11,6 +11,7 @@ import '../utilities/style.dart';
 var logger = Logger(filter: null, printer: PrettyPrinter(), output: null);
 
 class SettingsPage extends StatefulWidget {
+  static const String saveFilePath = "postcodeCache.txt";
   const SettingsPage();
   @override
   State<StatefulWidget> createState() => _SettingsPageState();
@@ -35,7 +36,7 @@ class _SettingsPageState extends State<SettingsPage> {
   Future<void> _setupAsync() async {
     Directory docDir = await getApplicationDocumentsDirectory();
     _preferredPostcodeFile = File(
-      "${docDir.path}/${RegionalPage.saveFilePath}",
+      "${docDir.path}/${SettingsPage.saveFilePath}",
     );
     _refreshTextField();
   }
