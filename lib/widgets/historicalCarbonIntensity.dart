@@ -1,7 +1,3 @@
-import 'dart:io';
-import 'package:electricity_prices_and_carbon_intensity/widgets/settings.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
-
 import 'package:electricity_prices_and_carbon_intensity/utilities/style.dart';
 import 'package:electricity_prices_and_carbon_intensity/widgets/chart.dart';
 import 'package:electricity_prices_and_carbon_intensity/utilities/httpclient.dart';
@@ -9,11 +5,11 @@ import 'package:electricity_prices_and_carbon_intensity/widgets/shimmerLoad.dart
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:intl/intl_browser.dart';
 import 'package:logger/logger.dart';
-import 'package:path_provider/path_provider.dart';
+
 import '../utilities/carbonIntensityApiCaller.dart';
 import '../utilities/regionalCarbonIntensityGenerationMixApiCaller.dart';
+import '../utilities/settings.dart';
 import 'carbonIntensity.dart';
 
 var logger = Logger(filter: null, printer: PrettyPrinter(), output: null);
@@ -34,8 +30,6 @@ class HistoricalCarbonIntensityPage extends StatefulWidget {
 class _HistoricalCarbonIntensityPageState
     extends State<HistoricalCarbonIntensityPage>
     with AutomaticKeepAliveClientMixin<HistoricalCarbonIntensityPage> {
-  static const String defaultPostcode = "N1";
-
   static final DateTime firstDate = DateTime(1985, 01, 01);
   static final DateTime lastDate = DateTime(2101, 01, 01);
   static final DateTime initialStartDate = DateTime(2023, 03, 09);
@@ -54,8 +48,7 @@ class _HistoricalCarbonIntensityPageState
   @override
   bool get wantKeepAlive => keepAlive;
 
-  late String _docDir;
-  late File _saveFile;
+  final Settings settings = Settings();
 
   DateTime start = initialStartDate;
   DateTime end = initialEndDate;
@@ -84,9 +77,9 @@ class _HistoricalCarbonIntensityPageState
     String text = _postcodeController.text;
     String savedPostcode = text;
     if (text.isEmpty) {
-      savedPostcode = await _readSavedPostcode();
+      savedPostcode = await settings.readSavedPostcode();
       if (savedPostcode.isEmpty) {
-        savedPostcode = defaultPostcode;
+        savedPostcode = Settings.defaultPostcode;
       }
     }
     setState(() {
@@ -112,16 +105,6 @@ class _HistoricalCarbonIntensityPageState
       this.end = picked.end;
       _startDateController.text = dateFormat.format(start);
       _endDateController.text = dateFormat.format(end);
-    }
-  }
-
-  Future<String> _readSavedPostcode() async {
-    try {
-      final contents = await _saveFile.readAsString();
-      return contents;
-    } catch (e) {
-      logger.e(e);
-      return defaultPostcode;
     }
   }
 
@@ -154,13 +137,8 @@ class _HistoricalCarbonIntensityPageState
   }
 
   void _initAsyncHelper() async {
-    if (!kIsWeb) {
-      _docDir = (await getApplicationDocumentsDirectory()).path;
-      _saveFile = File("$_docDir/${SettingsPage.saveFilePath}");
-    }
     _startDateController.text = dateFormat.format(start);
     _endDateController.text = dateFormat.format(end);
-    await findSystemLocale();
     dateFormat = DateFormat.yMMMd(Intl.systemLocale);
     _refreshAsync();
   }
