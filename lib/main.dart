@@ -1,3 +1,4 @@
+import 'package:electricity_prices_and_carbon_intensity/utilities/style.dart';
 import 'package:electricity_prices_and_carbon_intensity/widgets/electricity.dart';
 import 'package:electricity_prices_and_carbon_intensity/widgets/carbonIntensity.dart';
 import 'package:electricity_prices_and_carbon_intensity/widgets/gas.dart';
@@ -41,23 +42,38 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  // TODO: improve alignment of text on narrow screen devices
   late final List<NavigationDestination> _destinations = [
     // NavigationDestination(icon: Icon(Icons.co2_sharp), label: "National CI"),
-    NavigationDestination(icon: Icon(Icons.co2_sharp), label: "Regional CI"),
-    NavigationDestination(icon: Icon(Icons.history_sharp), label: "Historical"),
+    NavigationDestination(
+      icon: Icon(Icons.co2_sharp),
+      label: "Intensity",
+      tooltip: "Regional Carbon Intensity",
+      selectedIcon: Icon(Icons.co2_rounded),
+    ),
+    NavigationDestination(
+      icon: Icon(Icons.history_sharp),
+      label: "Historical",
+      tooltip: "Historical Carbon Intensity",
+      selectedIcon: Icon(Icons.history_rounded),
+    ),
     NavigationDestination(
       icon: Icon(Icons.bolt_sharp),
-      label: "Electricity Prices",
+      label: "Electricity",
+      tooltip: "Octopus Electricity Prices",
+      selectedIcon: Icon(Icons.bolt_rounded),
     ),
     NavigationDestination(
       icon: Icon(Icons.local_fire_department_sharp),
-      label: "Gas Prices",
+      label: "Gas",
+      tooltip: "Octopus Gas Prices",
+      selectedIcon: Icon(Icons.local_fire_department_rounded),
     ),
     // disabled for web devices since saving not supported
     NavigationDestination(
       icon: Icon(Icons.settings),
       label: "Settings",
+      tooltip: "Configuration Settings",
+      selectedIcon: Icon(Icons.settings_rounded),
       enabled: !kIsWeb,
     ),
   ];
@@ -87,7 +103,8 @@ class _MyHomePageState extends State<MyHomePage> {
         .map(
           (d) => NavigationRailDestination(
             icon: d.icon,
-            label: Text(d.label),
+            selectedIcon: d.selectedIcon,
+            label: Text(d.label, style: StyleComponents.smallText),
             disabled: !d.enabled,
           ),
         )
@@ -116,6 +133,9 @@ class _MyHomePageState extends State<MyHomePage> {
                   destinations: _destinations,
                   onDestinationSelected: _onDestinationSelected,
                   selectedIndex: _selectedIndex,
+                  labelTextStyle: WidgetStateProperty.all(
+                    StyleComponents.centerText,
+                  ),
                 ),
                 body: page,
               )

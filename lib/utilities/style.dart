@@ -6,6 +6,8 @@ class StyleComponents {
     fontWeight: FontWeight.bold,
   );
 
+  static const TextStyle centerText = const TextStyle(fontSize: 10);
+
   static const List<Color> defaultColors = const [
     Colors.blue,
     Colors.green,
