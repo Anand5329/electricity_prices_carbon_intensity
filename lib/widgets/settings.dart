@@ -42,10 +42,8 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Future<void> _refreshTextField() async {
-    String? savedPostcode = await settings.readSavedPostcode();
-    if (savedPostcode != null) {
-      _postcodeController.text = savedPostcode;
-    }
+    String savedPostcode = await settings.readSavedPostcode();
+    _postcodeController.text = savedPostcode;
   }
 
   @override
