@@ -11,6 +11,7 @@ void main() {
   final String tariffCode = "G-1R-VAR-BB-23-04-01-P";
 
   final client = GasApiCaller(productCode, tariffCode);
+  client.apiKey = "";
 
   group('Testing gas api caller', () {
     test('get current products', () async {

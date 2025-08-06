@@ -9,6 +9,7 @@ void main() {
     ElectricityPricesPage.defaultProductCode,
     ElectricityPricesPage.defaultTariffCode,
   );
+  client.apiKey = "";
 
   group('Testing electricity api caller', () {
     test('get current products', () async {
