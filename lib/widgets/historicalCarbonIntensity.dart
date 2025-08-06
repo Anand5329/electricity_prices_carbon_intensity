@@ -33,7 +33,7 @@ class _HistoricalCarbonIntensityPageState
   static final DateTime firstDate = DateTime(1985, 01, 01);
   static final DateTime lastDate = DateTime(2101, 01, 01);
   static final DateTime initialStartDate = DateTime(2023, 03, 09);
-  static final DateTime initialEndDate = DateTime(2023, 03, 10);
+  static final DateTime initialEndDate = DateTime(2023, 03, 11);
 
   static late DateFormat dateFormat = DateFormat.yMMMd(Intl.systemLocale);
 

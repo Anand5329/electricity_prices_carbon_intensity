@@ -417,11 +417,7 @@ abstract class ChartGeneratorFactory<T extends Comparable<T>> {
     languageCode = languageCode ?? Intl.systemLocale;
     // languageCode = Locale("en", "GB").toString();
     if (includeDateAtMidnight && datetime.hour < newDayThreshold) {
-      if (timescale <= 1) {
-        date = "\n${DateFormat.yMMMd(languageCode).format(datetime)}";
-      } else {
-        date = "\n${DateFormat.Md(languageCode).format(datetime)}";
-      }
+      date = "\n${DateFormat.Md(languageCode).format(datetime)}";
     }
     return DateFormat.Hm(languageCode).format(datetime) + date;
   }

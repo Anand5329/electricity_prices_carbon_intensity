@@ -313,7 +313,7 @@ class ElectricityPricesChartGeneratorFactory
 
     return (BuildContext context, DeviceSize size) {
       this.backgroundColor = Theme.of(context).colorScheme.surface;
-      return getChartData(spots, currentSpotIndex, size);
+      return getChartData(spots, currentSpotIndex, size, context);
     };
   }
 
