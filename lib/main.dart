@@ -1,13 +1,19 @@
+import 'package:electricity_prices_and_carbon_intensity/utilities/style.dart';
 import 'package:electricity_prices_and_carbon_intensity/widgets/electricity.dart';
 import 'package:electricity_prices_and_carbon_intensity/widgets/carbonIntensity.dart';
 import 'package:electricity_prices_and_carbon_intensity/widgets/gas.dart';
+import 'package:electricity_prices_and_carbon_intensity/widgets/historicalCarbonIntensity.dart';
 import 'package:electricity_prices_and_carbon_intensity/widgets/regionaldata.dart';
 import 'package:electricity_prices_and_carbon_intensity/widgets/settings.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:intl/date_symbol_data_local.dart';
+import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
 
-void main() {
+void main() async {
+  await initializeDateFormatting(Intl.systemLocale, null);
   runApp(const MyApp());
 }
 
@@ -20,7 +26,13 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Carbon Intensity App',
+      localizationsDelegates: [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: [Locale("en", "GB"), Locale("en", "US")],
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.lightGreen),
       ),
@@ -39,23 +51,39 @@ class MyHomePage extends StatefulWidget {
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
-// TODO: add pages for historical data
 class _MyHomePageState extends State<MyHomePage> {
   late final List<NavigationDestination> _destinations = [
     // NavigationDestination(icon: Icon(Icons.co2_sharp), label: "National CI"),
-    NavigationDestination(icon: Icon(Icons.co2_sharp), label: "Regional CI"),
+    NavigationDestination(
+      icon: Icon(Icons.co2_sharp),
+      label: "Intensity",
+      tooltip: "Regional Carbon Intensity",
+      selectedIcon: Icon(Icons.co2_rounded),
+    ),
+    NavigationDestination(
+      icon: Icon(Icons.history_sharp),
+      label: "Historical",
+      tooltip: "Historical Carbon Intensity",
+      selectedIcon: Icon(Icons.history_rounded),
+    ),
     NavigationDestination(
       icon: Icon(Icons.bolt_sharp),
-      label: "Electricity Prices",
+      label: "Electricity",
+      tooltip: "Octopus Electricity Prices",
+      selectedIcon: Icon(Icons.bolt_rounded),
     ),
     NavigationDestination(
       icon: Icon(Icons.local_fire_department_sharp),
-      label: "Gas Prices",
+      label: "Gas",
+      tooltip: "Octopus Gas Prices",
+      selectedIcon: Icon(Icons.local_fire_department_rounded),
     ),
     // disabled for web devices since saving not supported
     NavigationDestination(
       icon: Icon(Icons.settings),
       label: "Settings",
+      tooltip: "Configuration Settings",
+      selectedIcon: Icon(Icons.settings_rounded),
       enabled: !kIsWeb,
     ),
   ];
@@ -74,6 +102,7 @@ class _MyHomePageState extends State<MyHomePage> {
     pages = [
       // const CarbonIntensityPage(),
       const RegionalPage(),
+      const HistoricalCarbonIntensityPage(),
       const ElectricityPricesPage(),
       const GasPricesPage(),
       const SettingsPage(),
@@ -84,7 +113,8 @@ class _MyHomePageState extends State<MyHomePage> {
         .map(
           (d) => NavigationRailDestination(
             icon: d.icon,
-            label: Text(d.label),
+            selectedIcon: d.selectedIcon,
+            label: Text(d.label, style: StyleComponents.smallText),
             disabled: !d.enabled,
           ),
         )
@@ -113,6 +143,9 @@ class _MyHomePageState extends State<MyHomePage> {
                   destinations: _destinations,
                   onDestinationSelected: _onDestinationSelected,
                   selectedIndex: _selectedIndex,
+                  labelTextStyle: WidgetStateProperty.all(
+                    StyleComponents.centerText,
+                  ),
                 ),
                 body: page,
               )

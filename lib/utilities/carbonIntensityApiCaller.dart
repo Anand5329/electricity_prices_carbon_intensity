@@ -40,7 +40,7 @@ class CarbonIntensityCaller extends ApiCaller
       throw Exception("No intensity found");
     }
 
-    final List<PeriodData<IntensityData>> data = await parseIntensityAndTime(
+    final List<PeriodData<IntensityData>> data = parseIntensityAndTime(
       response,
     );
     if (data.isEmpty) {
@@ -56,9 +56,7 @@ class CarbonIntensityCaller extends ApiCaller
   ) async {
     final formattedDate = _dateFormatter.format(date);
     final response = await _get('$intensity/date/$formattedDate/');
-    return !isValidResponse(response)
-        ? []
-        : await parseIntensityAndTime(response);
+    return !isValidResponse(response) ? [] : parseIntensityAndTime(response);
   }
 
   /// fetches intensity data for the time period after the given from date and time

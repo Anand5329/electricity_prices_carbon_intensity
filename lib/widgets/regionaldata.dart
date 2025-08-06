@@ -1,6 +1,3 @@
-import 'dart:io';
-import 'package:flutter/foundation.dart' show kIsWeb;
-
 import 'package:electricity_prices_and_carbon_intensity/utilities/generationMixApiCaller.dart';
 import 'package:electricity_prices_and_carbon_intensity/utilities/style.dart';
 import 'package:electricity_prices_and_carbon_intensity/widgets/chart.dart';
@@ -10,16 +7,16 @@ import 'package:electricity_prices_and_carbon_intensity/widgets/shimmerLoad.dart
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
-import 'package:path_provider/path_provider.dart';
+
 import '../utilities/carbonIntensityApiCaller.dart';
 import '../utilities/regionalCarbonIntensityGenerationMixApiCaller.dart';
+import '../utilities/settings.dart';
 import 'animatedCounter.dart';
 import 'carbonIntensity.dart';
 
 var logger = Logger(filter: null, printer: PrettyPrinter(), output: null);
 
 class RegionalPage extends StatefulWidget {
-  static const String saveFilePath = "postcodeCache.txt";
   final String title;
   const RegionalPage({super.key, this.title = "Carbon Intensity"});
 
@@ -31,8 +28,6 @@ class RegionalPage extends StatefulWidget {
 
 class _RegionalPageState extends State<RegionalPage>
     with AutomaticKeepAliveClientMixin<RegionalPage> {
-  static const String defaultPostcode = "N1";
-
   bool _keepAlive = true;
 
   bool get keepAlive => _keepAlive;
@@ -44,8 +39,7 @@ class _RegionalPageState extends State<RegionalPage>
   @override
   bool get wantKeepAlive => keepAlive;
 
-  late String _docDir;
-  late File _saveFile;
+  final Settings settings = Settings();
 
   late int _counter = 0;
   late PeriodData<GenerationMix> _generation;
@@ -79,25 +73,15 @@ class _RegionalPageState extends State<RegionalPage>
     String text = _postcodeController.text;
     String savedPostcode = text;
     if (text.isEmpty) {
-      savedPostcode = await _readSavedPostcode();
+      savedPostcode = await settings.readSavedPostcode();
       if (savedPostcode.isEmpty) {
-        savedPostcode = defaultPostcode;
+        savedPostcode = Settings.defaultPostcode;
       }
     }
     setState(() {
       _postcodeController.text = savedPostcode;
     });
     _caller.postcode = _postcodeController.text;
-  }
-
-  Future<String> _readSavedPostcode() async {
-    try {
-      final contents = await _saveFile.readAsString();
-      return contents;
-    } catch (e) {
-      logger.e(e);
-      return defaultPostcode;
-    }
   }
 
   Future<void> _refreshCarbonIntensityAndGenerationMix() async {
@@ -169,10 +153,6 @@ class _RegionalPageState extends State<RegionalPage>
   }
 
   void _initAsyncHelper() async {
-    if (!kIsWeb) {
-      _docDir = (await getApplicationDocumentsDirectory()).path;
-      _saveFile = File("$_docDir/${RegionalPage.saveFilePath}");
-    }
     _refreshAsync();
   }
 
@@ -345,7 +325,7 @@ class RegionalCarbonIntensityChartGeneratorFactory
     List<FlSpot> spots = convertToChartData(all);
     return (BuildContext context, DeviceSize size) {
       this.backgroundColor = Theme.of(context).colorScheme.surface;
-      return getChartData(spots, currentIntensityIndex, size);
+      return getChartData(spots, currentIntensityIndex, size, context);
     };
   }
 
