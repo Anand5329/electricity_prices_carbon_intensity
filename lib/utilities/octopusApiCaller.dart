@@ -11,10 +11,9 @@ var logger = Logger(filter: null, printer: PrettyPrinter(), output: null);
 abstract base class OctopusApiCaller extends ApiCaller {
   static const String _baseUrl = "api.octopus.energy";
   static const String _apiPostFix = "v1/";
-  static const String _apiKey = "";
   static const String _auth = "Authorization";
 
-  static const int apiKeyNotFoundStatusCode = -400;
+  static const int apiKeyNotFoundStatusCode = 400;
 
   static const String _products = "products";
 
