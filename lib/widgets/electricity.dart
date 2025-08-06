@@ -342,10 +342,7 @@ class ElectricityPricesChartGeneratorFactory
       List<FlSpot> spots = convertToChartData(rates);
 
       return (BuildContext context, DeviceSize size) {
-        this.backgroundColor = Theme
-            .of(context)
-            .colorScheme
-            .surface;
+        this.backgroundColor = Theme.of(context).colorScheme.surface;
         return getChartData(spots, currentSpotIndex, size, context);
       };
     } on InvalidApiKeyError {
