@@ -60,6 +60,8 @@ class _GasPricesPageState extends State<GasPricesPage>
   @override
   bool get wantKeepAlive => keepAlive;
 
+  final Settings _settings = Settings();
+
   @override
   void initState() {
     super.initState();
@@ -68,8 +70,24 @@ class _GasPricesPageState extends State<GasPricesPage>
     _refreshAsync();
   }
 
-  void _refreshAsync() {
+  void _refreshAsync() async {
+    await _tryGettingApiKey();
     _refreshCurrentPrice();
+  }
+
+  Future<void> _tryGettingApiKey() async {
+    try {
+      _caller.apiKey ??= await _settings.readSavedApiKey();
+      setState(() {
+        _isApiKeyValid = true;
+      });
+    } on InvalidApiKeyError {
+      // try again later
+      setState(() {
+        _isApiKeyValid = false;
+      });
+      keepAlive = _isApiKeyValid;
+    }
   }
 
   Future<void> _setupProductsAndTariffs() async {

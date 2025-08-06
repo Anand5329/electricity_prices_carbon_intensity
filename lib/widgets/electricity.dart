@@ -64,6 +64,8 @@ class _ElectricityPricesPageState extends State<ElectricityPricesPage>
   @override
   bool get wantKeepAlive => keepAlive;
 
+  final Settings _settings = Settings();
+
   @override
   void initState() {
     super.initState();
@@ -78,9 +80,22 @@ class _ElectricityPricesPageState extends State<ElectricityPricesPage>
     _refreshAsync();
   }
 
-  void _refreshAsync() {
+  void _refreshAsync() async {
+    await _tryGettingApiKey();
     _refreshCurrentPrice();
     _refreshElectricityPricesChart();
+  }
+
+  Future<void> _tryGettingApiKey() async {
+    try {
+      _caller.apiKey ??= await _settings.readSavedApiKey();
+    } on InvalidApiKeyError {
+      // try again later
+      setState(() {
+        _isApiKeyValid = false;
+      });
+      keepAlive = _isApiKeyValid;
+    }
   }
 
   Future<void> _setupProductsAndTariffs() async {
@@ -219,7 +234,8 @@ class _ElectricityPricesPageState extends State<ElectricityPricesPage>
                         doublePrinter: AnimatedCounter.toNDecimalPlaces(2),
                       ),
                       SizedBox(height: 20),
-                      _adaptiveChartWidgetBuilder == null
+                      _adaptiveChartWidgetBuilder == null ||
+                              _caller.apiKey == null
                           ? SizedBox()
                           : LayoutBuilder(
                               builder: _adaptiveChartWidgetBuilder!.builder,

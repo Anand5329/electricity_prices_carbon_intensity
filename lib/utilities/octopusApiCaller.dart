@@ -37,8 +37,8 @@ abstract base class OctopusApiCaller extends ApiCaller {
   /// availableAt or when called the first time
   List<Product>? _fullProducts;
 
-  final Settings _settings = Settings();
-  final Map<String, String> _authenticationHeader = {};
+  /// the API key that will be used to authenticate requests
+  String? apiKey;
 
   OctopusApiCaller(this.productCode, this.tariffCode) : super(_baseUrl);
 
@@ -47,29 +47,14 @@ abstract base class OctopusApiCaller extends ApiCaller {
     Map<String, dynamic>? queryParams,
   }) async {
     try {
-      Map<String, String> _authHeader = await _getAuthenticationHeader();
-      assert(_authHeader == _authenticationHeader);
+      Map<String, String> _authHeader = {_auth: apiKey!};
+      return this.getHttps(
+        endpoint: _apiPostFix + endpoint,
+        queryParams: queryParams,
+        headers: _authHeader,
+      );
     } catch (e) {
       return Response(e.toString(), apiKeyNotFoundStatusCode);
-    }
-    return this.getHttps(
-      endpoint: _apiPostFix + endpoint,
-      queryParams: queryParams,
-      headers: _authenticationHeader,
-    );
-  }
-
-  Future<Map<String, String>> _getAuthenticationHeader() async {
-    try {
-      String apiKey = await _settings.readSavedApiKey();
-      _authenticationHeader.putIfAbsent(_auth, () => apiKey);
-      return _authenticationHeader;
-    } on InvalidApiKeyError {
-      logger.d("API Key not provided yet");
-      rethrow;
-    } catch (e) {
-      logger.e("Error encountered while reading API key: $e");
-      rethrow;
     }
   }
 
