@@ -1,4 +1,5 @@
 import 'package:electricity_prices_and_carbon_intensity/utilities/httpclient.dart';
+import 'package:electricity_prices_and_carbon_intensity/utilities/settings.dart';
 import 'package:electricity_prices_and_carbon_intensity/utilities/style.dart';
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
@@ -46,6 +47,7 @@ class _GasPricesPageState extends State<GasPricesPage>
   List<Tariff> _tariffList = [defaultTariff];
 
   late GasApiCaller _caller;
+  bool _isApiKeyValid = false;
 
   bool _keepAlive = true;
 
@@ -58,6 +60,8 @@ class _GasPricesPageState extends State<GasPricesPage>
   @override
   bool get wantKeepAlive => keepAlive;
 
+  final Settings _settings = Settings();
+
   @override
   void initState() {
     super.initState();
@@ -66,13 +70,35 @@ class _GasPricesPageState extends State<GasPricesPage>
     _refreshAsync();
   }
 
-  void _refreshAsync() {
+  void _refreshAsync() async {
+    await _tryGettingApiKey();
     _refreshCurrentPrice();
   }
 
+  Future<void> _tryGettingApiKey() async {
+    try {
+      _caller.apiKey ??= await _settings.readSavedApiKey();
+      setState(() {
+        _isApiKeyValid = true;
+      });
+    } on InvalidApiKeyError {
+      // try again later
+      setState(() {
+        _isApiKeyValid = false;
+      });
+      keepAlive = _isApiKeyValid;
+    }
+  }
+
   Future<void> _setupProductsAndTariffs() async {
-    _productList = await _caller.getProducts();
-    _refreshTariffCodeList();
+    try {
+      _productList = await _caller.getProducts();
+      _refreshTariffCodeList();
+    } on InvalidApiKeyError {
+      setState(() {
+        _isApiKeyValid = false;
+      });
+    }
   }
 
   Future<void> _refreshTariffCodeList() async {
@@ -88,14 +114,22 @@ class _GasPricesPageState extends State<GasPricesPage>
     setState(() {
       _currentPrice = 0;
     });
-    PeriodData<Rate> period = await _caller.getCurrentPrice(
-      productCode: _productCode,
-      tariffCode: _tariffCode,
-    );
-    setState(() {
-      _currentPrice = period.value.valueIncVat;
-      _currentPeriod = period;
-    });
+    try {
+      PeriodData<Rate> period = await _caller.getCurrentPrice(
+        productCode: _productCode,
+        tariffCode: _tariffCode,
+      );
+      setState(() {
+        _currentPrice = period.value.valueIncVat;
+        _currentPeriod = period;
+        _isApiKeyValid = true;
+      });
+    } on InvalidApiKeyError {
+      setState(() {
+        _isApiKeyValid = false;
+      });
+    }
+    keepAlive = _isApiKeyValid;
   }
 
   @override
@@ -104,88 +138,92 @@ class _GasPricesPageState extends State<GasPricesPage>
     StyleComponents style = StyleComponents(Theme.of(context));
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints constraints) {
-        return SingleChildScrollView(
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                const SizedBox(height: 40),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    DropdownMenu<Product>(
-                      width: constraints.maxWidth > _widthThreshold
-                          ? null
-                          : _menuWidth,
-                      initialSelection: defaultProduct,
-                      dropdownMenuEntries: _productList
-                          .map(
-                            (product) => DropdownMenuEntry(
-                              value: product,
-                              label: product.name,
-                            ),
-                          )
-                          .toList(),
-                      onSelected: (Product? product) {
-                        _productCode =
-                            product?.code ?? GasPricesPage.defaultProductCode;
-                        _refreshTariffCodeList();
-                      },
-                      requestFocusOnTap: true,
-                      label: const Text("Product"),
-                    ),
-                    const SizedBox(width: 40),
-                    DropdownMenu<Tariff>(
-                      width: constraints.maxWidth > _widthThreshold
-                          ? null
-                          : _menuWidth,
-                      initialSelection: defaultTariff,
-                      dropdownMenuEntries: _tariffList
-                          .map(
-                            (tariff) => DropdownMenuEntry(
-                              value: tariff,
-                              label: tariff.name,
-                            ),
-                          )
-                          .toList(),
-                      onSelected: (Tariff? tariff) {
-                        _tariffCode =
-                            tariff?.code ?? GasPricesPage.defaultTariffCode;
-                      },
-                      requestFocusOnTap: true,
-                      label: const Text("Tariff"),
-                    ),
-                    const SizedBox(width: 24),
-                    TextButton(
-                      style: style.simpleButtonStyle(),
-                      child: Icon(Icons.refresh_rounded),
-                      onPressed: _refreshAsync,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    BigAnimatedCounter(
-                      count: _currentPrice,
-                      doublePrinter: AnimatedCounter.toNDecimalPlaces(2),
-                    ),
-                    const SizedBox(width: 10),
-                    style.subHeadingTextWithPadding("p/kWh"),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                _currentPeriod == null
-                    ? const SizedBox(height: 20)
-                    : Text(
-                        "Price valid since ${_currentPeriod!.prettyPrintPeriod()}",
-                        style: StyleComponents.smallText,
+        return !_isApiKeyValid
+            ? style.getInvalidApiKeyWidget()
+            : SingleChildScrollView(
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
+                      const SizedBox(height: 40),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          DropdownMenu<Product>(
+                            width: constraints.maxWidth > _widthThreshold
+                                ? null
+                                : _menuWidth,
+                            initialSelection: defaultProduct,
+                            dropdownMenuEntries: _productList
+                                .map(
+                                  (product) => DropdownMenuEntry(
+                                    value: product,
+                                    label: product.name,
+                                  ),
+                                )
+                                .toList(),
+                            onSelected: (Product? product) {
+                              _productCode =
+                                  product?.code ??
+                                  GasPricesPage.defaultProductCode;
+                              _refreshTariffCodeList();
+                            },
+                            requestFocusOnTap: true,
+                            label: const Text("Product"),
+                          ),
+                          const SizedBox(width: 40),
+                          DropdownMenu<Tariff>(
+                            width: constraints.maxWidth > _widthThreshold
+                                ? null
+                                : _menuWidth,
+                            initialSelection: defaultTariff,
+                            dropdownMenuEntries: _tariffList
+                                .map(
+                                  (tariff) => DropdownMenuEntry(
+                                    value: tariff,
+                                    label: tariff.name,
+                                  ),
+                                )
+                                .toList(),
+                            onSelected: (Tariff? tariff) {
+                              _tariffCode =
+                                  tariff?.code ??
+                                  GasPricesPage.defaultTariffCode;
+                            },
+                            requestFocusOnTap: true,
+                            label: const Text("Tariff"),
+                          ),
+                          const SizedBox(width: 24),
+                          TextButton(
+                            style: style.simpleButtonStyle(),
+                            child: Icon(Icons.refresh_rounded),
+                            onPressed: _refreshAsync,
+                          ),
+                        ],
                       ),
-              ],
-            ),
-          ),
-        );
+                      const SizedBox(height: 20),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          BigAnimatedCounter(
+                            count: _currentPrice,
+                            doublePrinter: AnimatedCounter.toNDecimalPlaces(2),
+                          ),
+                          const SizedBox(width: 10),
+                          style.subHeadingTextWithPadding("p/kWh"),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+                      _currentPeriod == null
+                          ? const SizedBox(height: 20)
+                          : Text(
+                              "Price valid since ${_currentPeriod!.prettyPrintPeriod()}",
+                              style: StyleComponents.smallText,
+                            ),
+                    ],
+                  ),
+                ),
+              );
       },
     );
   }

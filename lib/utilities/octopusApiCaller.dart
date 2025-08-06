@@ -1,4 +1,5 @@
 import 'package:electricity_prices_and_carbon_intensity/utilities/httpclient.dart';
+import 'package:electricity_prices_and_carbon_intensity/utilities/settings.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:http/http.dart';
 import 'dart:convert';
@@ -10,10 +11,9 @@ var logger = Logger(filter: null, printer: PrettyPrinter(), output: null);
 abstract base class OctopusApiCaller extends ApiCaller {
   static const String _baseUrl = "api.octopus.energy";
   static const String _apiPostFix = "v1/";
-  static const String _apiKey = "";
-  static final Map<String, String> _authenticationHeader = <String, String>{
-    "Authorization": _apiKey,
-  };
+  static const String _auth = "Authorization";
+
+  static const int apiKeyNotFoundStatusCode = 400;
 
   static const String _products = "products";
 
@@ -37,14 +37,25 @@ abstract base class OctopusApiCaller extends ApiCaller {
   /// availableAt or when called the first time
   List<Product>? _fullProducts;
 
+  /// the API key that will be used to authenticate requests
+  String? apiKey;
+
   OctopusApiCaller(this.productCode, this.tariffCode) : super(_baseUrl);
 
-  Future<Response> _get(String endpoint, {Map<String, dynamic>? queryParams}) {
-    return this.getHttps(
-      endpoint: _apiPostFix + endpoint,
-      queryParams: queryParams,
-      headers: _authenticationHeader,
-    );
+  Future<Response> _get(
+    String endpoint, {
+    Map<String, dynamic>? queryParams,
+  }) async {
+    try {
+      Map<String, String> _authHeader = {_auth: apiKey!};
+      return this.getHttps(
+        endpoint: _apiPostFix + endpoint,
+        queryParams: queryParams,
+        headers: _authHeader,
+      );
+    } catch (e) {
+      return Response(e.toString(), apiKeyNotFoundStatusCode);
+    }
   }
 
   Future<List<Product>> _initProducts({DateTime? availableAt}) async {
@@ -99,6 +110,9 @@ abstract base class OctopusApiCaller extends ApiCaller {
     if (isValidResponse(response)) {
       return _parseProducts(response);
     } else {
+      if (response.statusCode == apiKeyNotFoundStatusCode) {
+        throw InvalidApiKeyError();
+      }
       throw Exception("Products not found. Response: ${response.body}");
     }
   }
@@ -123,6 +137,9 @@ abstract base class OctopusApiCaller extends ApiCaller {
     if (isValidResponse(response)) {
       return _parseProduct(response);
     } else {
+      if (response.statusCode == apiKeyNotFoundStatusCode) {
+        throw InvalidApiKeyError();
+      }
       throw Exception(
         "Could not fetch product with code $code. \nError: ${response.body}",
       );
@@ -167,6 +184,9 @@ abstract base class OctopusApiCaller extends ApiCaller {
     if (isValidResponse(response)) {
       return _parseRates(response);
     } else {
+      if (response.statusCode == apiKeyNotFoundStatusCode) {
+        throw InvalidApiKeyError();
+      }
       throw Exception(
         "$tariffType rates not found for product $productCode with tariff band $tariffCode from $from"
         "\nError: ${response.body}",

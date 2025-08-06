@@ -17,6 +17,7 @@ class SettingsPage extends StatefulWidget {
 class _SettingsPageState extends State<SettingsPage> {
   final Settings settings = Settings();
   final _postcodeController = TextEditingController();
+  final _apiKeyController = TextEditingController();
 
   @override
   void initState() {
@@ -27,11 +28,12 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   void dispose() {
     _postcodeController.dispose();
+    _apiKeyController.dispose();
     super.dispose();
   }
 
   Future<void> _setupAsync() async {
-    _refreshTextField();
+    _refreshTextFields();
   }
 
   Future<void> _save() async {
@@ -39,11 +41,26 @@ class _SettingsPageState extends State<SettingsPage> {
     if (postcode.isNotEmpty) {
       await settings.savePostcode(postcode);
     }
+
+    String apiKey = _apiKeyController.text;
+    if (apiKey.isNotEmpty) {
+      await settings.saveApiKey(apiKey);
+    }
   }
 
-  Future<void> _refreshTextField() async {
+  Future<void> _refreshTextFields() async {
     String savedPostcode = await settings.readSavedPostcode();
     _postcodeController.text = savedPostcode;
+
+    String savedApiKey = "";
+    try {
+      savedApiKey = await settings.readSavedApiKey();
+    } on InvalidApiKeyError {
+      logger.d("API Key not initialised");
+    } catch (e) {
+      logger.e("Error reading API Key: $e");
+    }
+    _apiKeyController.text = savedApiKey;
   }
 
   @override
@@ -67,10 +84,44 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
             ),
             const SizedBox(width: 24),
-            TextButton(
-              style: style.simpleButtonStyle(),
-              child: Icon(Icons.save),
-              onPressed: _save,
+          ],
+        ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Expanded(
+              child: StyleComponents.paddingWrapper(
+                TextField(
+                  controller: _apiKeyController,
+                  decoration: InputDecoration(
+                    hintText: 'Enter your Octopus Agile API key',
+                    labelText: "Octopus API Key",
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 24),
+          ],
+        ),
+        const SizedBox(height: 24),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Expanded(
+              child: StyleComponents.paddingWrapper(
+                TextButton(
+                  style: style.simpleButtonStyle(),
+                  onPressed: _save,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.save),
+                      const SizedBox(width: 12),
+                      Text("Save", style: StyleComponents.smallText),
+                    ],
+                  ),
+                ),
+              ),
             ),
           ],
         ),

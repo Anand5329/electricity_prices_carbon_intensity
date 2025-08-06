@@ -84,7 +84,6 @@ class _MyHomePageState extends State<MyHomePage> {
       label: "Settings",
       tooltip: "Configuration Settings",
       selectedIcon: Icon(Icons.settings_rounded),
-      enabled: !kIsWeb,
     ),
   ];
   late final List<NavigationRailDestination> _railDestinations;
