@@ -108,15 +108,18 @@ class _SettingsPageState extends State<SettingsPage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Expanded(
-              child: TextButton(
-                style: style.simpleButtonStyle(),
-                onPressed: _save,
-                child: Row(
-                  children: [
-                    Icon(Icons.save),
-                    const SizedBox(width: 12),
-                    Text("Save", style: StyleComponents.smallText),
-                  ],
+              child: StyleComponents.paddingWrapper(
+                TextButton(
+                  style: style.simpleButtonStyle(),
+                  onPressed: _save,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.save),
+                      const SizedBox(width: 12),
+                      Text("Save", style: StyleComponents.smallText),
+                    ],
+                  ),
                 ),
               ),
             ),
