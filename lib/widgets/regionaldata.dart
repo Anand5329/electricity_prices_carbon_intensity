@@ -74,6 +74,7 @@ class _RegionalPageState extends State<RegionalPage>
     String savedPostcode = text;
     if (text.isEmpty) {
       savedPostcode = await settings.readSavedPostcode();
+      logger.d("Fetching postcode: $savedPostcode");
       if (savedPostcode.isEmpty) {
         savedPostcode = Settings.defaultPostcode;
       }

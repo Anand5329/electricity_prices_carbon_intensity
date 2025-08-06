@@ -89,6 +89,17 @@ class StyleComponents {
     );
   }
 
+  Widget getInvalidApiKeyWidget() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(Icons.warning),
+        const SizedBox(height: 24),
+        Text("Please input a valid API key on the Settings page"),
+      ],
+    );
+  }
+
   static Widget headlineTextWrapper(String text, ThemeData theme) {
     final textStyle = theme.textTheme.displayLarge!.copyWith(
       color: theme.colorScheme.primary,
