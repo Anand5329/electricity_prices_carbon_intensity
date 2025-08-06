@@ -1,5 +1,6 @@
 import 'package:electricity_prices_and_carbon_intensity/utilities/electricityApiCaller.dart';
 import 'package:electricity_prices_and_carbon_intensity/utilities/httpclient.dart';
+import 'package:electricity_prices_and_carbon_intensity/utilities/settings.dart';
 import 'package:electricity_prices_and_carbon_intensity/utilities/style.dart';
 import 'package:electricity_prices_and_carbon_intensity/widgets/chart.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -46,12 +47,13 @@ class _ElectricityPricesPageState extends State<ElectricityPricesPage>
   List<Product> _productList = [defaultProduct];
   List<Tariff> _tariffList = [defaultTariff];
 
+  bool _isApiKeyValid = false;
   late ElectricityApiCaller _caller;
   late ElectricityPricesChartGeneratorFactory _chartGeneratorFactory;
   AdaptiveChartWidgetBuilder? _adaptiveChartWidgetBuilder;
   PeriodData<Rate>? _minPeriod;
 
-  bool _keepAlive = true;
+  bool _keepAlive = false;
 
   bool get keepAlive => _keepAlive;
   set keepAlive(bool value) {
@@ -77,18 +79,27 @@ class _ElectricityPricesPageState extends State<ElectricityPricesPage>
   }
 
   void _refreshAsync() {
-    _refreshElectricityPricesChart();
     _refreshCurrentPrice();
+    _refreshElectricityPricesChart();
   }
 
   Future<void> _setupProductsAndTariffs() async {
-    _productList = await _caller.getProducts();
-    _refreshTariffCodeList();
+    try {
+      _productList = await _caller.getProducts();
+      _refreshTariffCodeList();
+      _isApiKeyValid = true;
+    } on InvalidApiKeyError {
+      setState(() {
+        _isApiKeyValid = false;
+      });
+    }
+    keepAlive = _isApiKeyValid;
   }
 
   Future<void> _refreshTariffCodeList() async {
     final product = await _caller.getProductWithCode(code: _productCode);
     setState(() {
+      _isApiKeyValid = true;
       _tariffList = product.tariffCodes
           .where((tariff) => tariff.type == TariffType.electricity)
           .toList(growable: false);
@@ -96,13 +107,21 @@ class _ElectricityPricesPageState extends State<ElectricityPricesPage>
   }
 
   Future<void> _refreshCurrentPrice() async {
-    PeriodData<Rate> price = await _caller.getCurrentPrice(
-      productCode: _productCode,
-      tariffCode: _tariffCode,
-    );
-    setState(() {
-      _currentPrice = price.value.valueIncVat;
-    });
+    try {
+      PeriodData<Rate> price = await _caller.getCurrentPrice(
+        productCode: _productCode,
+        tariffCode: _tariffCode,
+      );
+      setState(() {
+        _currentPrice = price.value.valueIncVat;
+        _isApiKeyValid = true;
+      });
+    } on InvalidApiKeyError {
+      setState(() {
+        _isApiKeyValid = false;
+      });
+    }
+    keepAlive = _isApiKeyValid;
   }
 
   Future<void> _refreshElectricityPricesChart() async {
@@ -111,11 +130,19 @@ class _ElectricityPricesPageState extends State<ElectricityPricesPage>
     final generator = await _chartGeneratorFactory.getChartGenerator();
     _caller.productCode = _productCode;
     _caller.tariffCode = _tariffCode;
-    final minPeriod = await _caller.forecastMinimum();
-    setState(() {
-      _adaptiveChartWidgetBuilder = AdaptiveChartWidgetBuilder(generator);
-      _minPeriod = minPeriod;
-    });
+    try {
+      final minPeriod = await _caller.forecastMinimum();
+      setState(() {
+        _adaptiveChartWidgetBuilder = AdaptiveChartWidgetBuilder(generator);
+        _minPeriod = minPeriod;
+        _isApiKeyValid = true;
+      });
+    } on InvalidApiKeyError {
+      setState(() {
+        _isApiKeyValid = false;
+      });
+    }
+    keepAlive = _isApiKeyValid;
   }
 
   @override
@@ -124,98 +151,100 @@ class _ElectricityPricesPageState extends State<ElectricityPricesPage>
     StyleComponents style = StyleComponents(Theme.of(context));
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints constraints) {
-        return SingleChildScrollView(
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                const SizedBox(height: 40),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    DropdownMenu<Product>(
-                      width: constraints.maxWidth > _widthThreshold
-                          ? null
-                          : _menuWidth,
-                      initialSelection: defaultProduct,
-                      dropdownMenuEntries: _productList
-                          .map(
-                            (product) => DropdownMenuEntry(
-                              value: product,
-                              label: product.name,
-                            ),
-                          )
-                          .toList(),
-                      onSelected: (Product? product) {
-                        _productCode =
-                            product?.code ??
-                            ElectricityPricesPage.defaultProductCode;
-                        _refreshTariffCodeList();
-                      },
-                      requestFocusOnTap: true,
-                      label: const Text("Product"),
-                    ),
-                    const SizedBox(width: 40),
-                    DropdownMenu<Tariff>(
-                      width: constraints.maxWidth > _widthThreshold
-                          ? null
-                          : _menuWidth,
-                      initialSelection: defaultTariff,
-                      dropdownMenuEntries: _tariffList
-                          .map(
-                            (tariff) => DropdownMenuEntry(
-                              value: tariff,
-                              label: tariff.name,
-                            ),
-                          )
-                          .toList(),
-                      onSelected: (Tariff? tariff) {
-                        _tariffCode =
-                            tariff?.code ??
-                            ElectricityPricesPage.defaultTariffCode;
-                      },
-                      requestFocusOnTap: true,
-                      label: const Text("Tariff"),
-                    ),
-                    const SizedBox(width: 24),
-                    TextButton(
-                      style: style.simpleButtonStyle(),
-                      child: Icon(Icons.refresh_rounded),
-                      onPressed: _refreshAsync,
-                    ),
-                  ],
-                ),
-                BigAnimatedCounter(
-                  count: _currentPrice,
-                  doublePrinter: AnimatedCounter.toNDecimalPlaces(2),
-                ),
-                SizedBox(height: 20),
-                _adaptiveChartWidgetBuilder == null
-                    ? SizedBox()
-                    : LayoutBuilder(
-                        builder: _adaptiveChartWidgetBuilder!.builder,
-                      ),
-                SizedBox(height: 20),
-                _minPeriod == null
-                    ? SizedBox()
-                    : Column(
+        return !_isApiKeyValid
+            ? style.getInvalidApiKeyWidget()
+            : SingleChildScrollView(
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
+                      const SizedBox(height: 40),
+                      Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text("Next lowest:"),
-                          Text(
-                            _minPeriod!.prettyPrintPeriod(),
-                            style: StyleComponents.smallText,
+                          DropdownMenu<Product>(
+                            width: constraints.maxWidth > _widthThreshold
+                                ? null
+                                : _menuWidth,
+                            initialSelection: defaultProduct,
+                            dropdownMenuEntries: _productList
+                                .map(
+                                  (product) => DropdownMenuEntry(
+                                    value: product,
+                                    label: product.name,
+                                  ),
+                                )
+                                .toList(),
+                            onSelected: (Product? product) {
+                              _productCode =
+                                  product?.code ??
+                                  ElectricityPricesPage.defaultProductCode;
+                              _refreshTariffCodeList();
+                            },
+                            requestFocusOnTap: true,
+                            label: const Text("Product"),
                           ),
-                          Text(
-                            "${_minPeriod?.value} ${ElectricityPricesChartGeneratorFactory.unit}",
-                            style: StyleComponents.smallText,
+                          const SizedBox(width: 40),
+                          DropdownMenu<Tariff>(
+                            width: constraints.maxWidth > _widthThreshold
+                                ? null
+                                : _menuWidth,
+                            initialSelection: defaultTariff,
+                            dropdownMenuEntries: _tariffList
+                                .map(
+                                  (tariff) => DropdownMenuEntry(
+                                    value: tariff,
+                                    label: tariff.name,
+                                  ),
+                                )
+                                .toList(),
+                            onSelected: (Tariff? tariff) {
+                              _tariffCode =
+                                  tariff?.code ??
+                                  ElectricityPricesPage.defaultTariffCode;
+                            },
+                            requestFocusOnTap: true,
+                            label: const Text("Tariff"),
+                          ),
+                          const SizedBox(width: 24),
+                          TextButton(
+                            style: style.simpleButtonStyle(),
+                            child: Icon(Icons.refresh_rounded),
+                            onPressed: _refreshAsync,
                           ),
                         ],
                       ),
-              ],
-            ),
-          ),
-        );
+                      BigAnimatedCounter(
+                        count: _currentPrice,
+                        doublePrinter: AnimatedCounter.toNDecimalPlaces(2),
+                      ),
+                      SizedBox(height: 20),
+                      _adaptiveChartWidgetBuilder == null
+                          ? SizedBox()
+                          : LayoutBuilder(
+                              builder: _adaptiveChartWidgetBuilder!.builder,
+                            ),
+                      SizedBox(height: 20),
+                      _minPeriod == null
+                          ? SizedBox()
+                          : Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text("Next lowest:"),
+                                Text(
+                                  _minPeriod!.prettyPrintPeriod(),
+                                  style: StyleComponents.smallText,
+                                ),
+                                Text(
+                                  "${_minPeriod?.value} ${ElectricityPricesChartGeneratorFactory.unit}",
+                                  style: StyleComponents.smallText,
+                                ),
+                              ],
+                            ),
+                    ],
+                  ),
+                ),
+              );
       },
     );
   }
@@ -302,19 +331,28 @@ class ElectricityPricesChartGeneratorFactory
   getChartGenerator() async {
     DateTime yesterday = DateTime.now().toUtc().subtract(Duration(days: 1));
     DateTime tomorrow = yesterday.add(Duration(days: 2));
-    List<PeriodData<Rate>> rates = await _caller.getTariffsFrom(
-      productCode: productCode,
-      tariffCode: tariffCode,
-      yesterday,
-      to: tomorrow,
-    );
-    int currentSpotIndex = _getCurrentSpotIndex(rates);
-    List<FlSpot> spots = convertToChartData(rates);
+    try {
+      List<PeriodData<Rate>> rates = await _caller.getTariffsFrom(
+        productCode: productCode,
+        tariffCode: tariffCode,
+        yesterday,
+        to: tomorrow,
+      );
+      int currentSpotIndex = _getCurrentSpotIndex(rates);
+      List<FlSpot> spots = convertToChartData(rates);
 
-    return (BuildContext context, DeviceSize size) {
-      this.backgroundColor = Theme.of(context).colorScheme.surface;
-      return getChartData(spots, currentSpotIndex, size, context);
-    };
+      return (BuildContext context, DeviceSize size) {
+        this.backgroundColor = Theme
+            .of(context)
+            .colorScheme
+            .surface;
+        return getChartData(spots, currentSpotIndex, size, context);
+      };
+    } on InvalidApiKeyError {
+      return (BuildContext context, DeviceSize size) {
+        return getChartData([], 0, size, context);
+      };
+    }
   }
 
   static int _getCurrentSpotIndex(List<PeriodData<Rate>> rates) {
