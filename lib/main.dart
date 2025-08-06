@@ -7,9 +7,13 @@ import 'package:electricity_prices_and_carbon_intensity/widgets/regionaldata.dar
 import 'package:electricity_prices_and_carbon_intensity/widgets/settings.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:intl/date_symbol_data_local.dart';
+import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
 
-void main() {
+void main() async {
+  await initializeDateFormatting(Intl.systemLocale, null);
   runApp(const MyApp());
 }
 
@@ -22,7 +26,13 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Carbon Intensity App',
+      localizationsDelegates: [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: [Locale("en", "GB"), Locale("en", "US")],
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.lightGreen),
       ),

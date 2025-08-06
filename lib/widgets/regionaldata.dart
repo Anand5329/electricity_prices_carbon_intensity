@@ -325,7 +325,7 @@ class RegionalCarbonIntensityChartGeneratorFactory
     List<FlSpot> spots = convertToChartData(all);
     return (BuildContext context, DeviceSize size) {
       this.backgroundColor = Theme.of(context).colorScheme.surface;
-      return getChartData(spots, currentIntensityIndex, size);
+      return getChartData(spots, currentIntensityIndex, size, context);
     };
   }
 

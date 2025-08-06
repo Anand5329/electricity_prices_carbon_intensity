@@ -72,6 +72,7 @@ abstract class ChartGeneratorFactory<T extends Comparable<T>> {
     List<FlSpot> data,
     int currentSpotIndex,
     DeviceSize size,
+    BuildContext context,
   ) {
     double? minX, maxX, minY, maxY;
     if (data.isNotEmpty) {
@@ -91,7 +92,7 @@ abstract class ChartGeneratorFactory<T extends Comparable<T>> {
       minX: minX,
       maxY: maxY,
       minY: minY,
-      titlesData: _getTitlesData(size, data.length),
+      titlesData: _getTitlesData(size, data.length, context),
       borderData: FlBorderData(show: false),
       lineTouchData: touchData,
       gridData: gridData,
@@ -308,7 +309,11 @@ abstract class ChartGeneratorFactory<T extends Comparable<T>> {
     return colors.last;
   }
 
-  FlTitlesData _getTitlesData(DeviceSize size, int numberOfPoints) {
+  FlTitlesData _getTitlesData(
+    DeviceSize size,
+    int numberOfPoints,
+    BuildContext context,
+  ) {
     // usually 1, but if many more points, will scale interval
     double scale = numberOfPoints / usualNumberOfPoints;
     double interval;
@@ -322,6 +327,8 @@ abstract class ChartGeneratorFactory<T extends Comparable<T>> {
         break;
     }
 
+    String languageCode = Localizations.localeOf(context).toString();
+
     return FlTitlesData(
       show: true,
       rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -333,8 +340,13 @@ abstract class ChartGeneratorFactory<T extends Comparable<T>> {
           showTitles: true,
           reservedSize: 50,
           interval: interval,
-          getTitlesWidget: (timestamp, meta) =>
-              _bottomTitleWidgets(timestamp, meta, size, scale.round()),
+          getTitlesWidget: (timestamp, meta) => _bottomTitleWidgets(
+            timestamp,
+            meta,
+            size,
+            scale.round(),
+            languageCode,
+          ),
           minIncluded: false,
           maxIncluded: false,
         ),
@@ -367,6 +379,7 @@ abstract class ChartGeneratorFactory<T extends Comparable<T>> {
     TitleMeta meta,
     DeviceSize size,
     int timescale,
+    String languageCode,
   ) {
     return Text(
       _toReadableTimeStamp(
@@ -374,18 +387,19 @@ abstract class ChartGeneratorFactory<T extends Comparable<T>> {
         includeDateAtMidnight: true,
         size: size,
         timescale: timescale,
+        languageCode: languageCode,
       ),
       style: textStyle,
       textAlign: TextAlign.center,
     );
   }
 
-  // TODO: figure out time format according to locales(day before month)
   String _toReadableTimeStamp(
     double timestamp, {
     bool includeDateAtMidnight = false,
     DeviceSize? size,
     int timescale = 1,
+    String? languageCode,
   }) {
     final datetime = DateTime.fromMillisecondsSinceEpoch(timestamp.round());
     String date = "";
@@ -400,14 +414,16 @@ abstract class ChartGeneratorFactory<T extends Comparable<T>> {
       default:
         newDayThreshold = 0;
     }
+    languageCode = languageCode ?? Intl.systemLocale;
+    // languageCode = Locale("en", "GB").toString();
     if (includeDateAtMidnight && datetime.hour < newDayThreshold) {
       if (timescale <= 1) {
-        date = "\n${DateFormat.yMMMd().format(datetime)}";
+        date = "\n${DateFormat.yMMMd(languageCode).format(datetime)}";
       } else {
-        date = "\n${DateFormat.Md(Intl.systemLocale).format(datetime)}";
+        date = "\n${DateFormat.Md(languageCode).format(datetime)}";
       }
     }
-    return DateFormat.Hm().format(datetime) + date;
+    return DateFormat.Hm(languageCode).format(datetime) + date;
   }
 
   static FlLine _getGridLine(value) {
