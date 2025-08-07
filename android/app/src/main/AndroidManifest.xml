@@ -1,4 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"  android:installLocation="preferExternal">
+    <uses-permission android:name="android.permission.INTERNET" />
     <application
         android:label="Carbon Intensity Tracker"
         android:name="${applicationName}"
