@@ -1,6 +1,8 @@
 import 'dart:async';
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:logger/logger.dart';
 
 import '../utilities/settings.dart';
@@ -15,6 +17,9 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
+  static const String _apiHelperLink =
+      "https://octopus.energy/dashboard/new/accounts/personal-details/api-access";
+
   final Settings settings = Settings();
   final _postcodeController = TextEditingController();
   final _apiKeyController = TextEditingController();
@@ -63,6 +68,12 @@ class _SettingsPageState extends State<SettingsPage> {
     _apiKeyController.text = savedApiKey;
   }
 
+  Future<void> _launchUrl(Uri url) async {
+    if (!await launchUrl(url)) {
+      logger.e("Could not launch $url");
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final style = StyleComponents(Theme.of(context));
@@ -101,6 +112,39 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
             ),
             const SizedBox(width: 24),
+          ],
+        ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Expanded(
+              child: StyleComponents.paddingWrapper(
+                RichText(
+                  text: TextSpan(
+                    children: [
+                      TextSpan(
+                        text: "You can generate an API Key",
+                        style: StyleComponents.smallText.copyWith(
+                          fontWeight: FontWeight.normal,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
+                      TextSpan(
+                        text: " after logging in to your Octopus account",
+                        style: StyleComponents.smallText.copyWith(
+                          fontWeight: FontWeight.normal,
+                          fontStyle: FontStyle.italic,
+                          decoration: TextDecoration.underline,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                        recognizer: TapGestureRecognizer()
+                          ..onTap = () => _launchUrl(Uri.parse(_apiHelperLink)),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 24),
