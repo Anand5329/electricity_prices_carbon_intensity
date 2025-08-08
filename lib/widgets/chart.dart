@@ -130,6 +130,8 @@ abstract class ChartGeneratorFactory<T extends Comparable<T>> {
             event is FlLongPressEnd) {
           // TODO: fix: FlPanUpdate event detected when should be FlPanEndEvent. Not resetting to False.
           setStateFn(() {
+            // set to false so that tooltip and spot can be overriden to
+            // highlight current intensity/value
             this.handleBuiltInTouches = false;
           });
         } else {
