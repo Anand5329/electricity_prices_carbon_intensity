@@ -91,34 +91,44 @@ class _CarbonIntensityPageState extends State<CarbonIntensityPage>
   Widget build(BuildContext context) {
     super.build(context);
     return SingleChildScrollView(
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const SizedBox(height: 40),
-            BigAnimatedCounter(count: _counter.toDouble()),
-            SizedBox(height: 40),
-            _adaptiveChartWidgetBuilder == null
-                ? SizedBox()
-                : LayoutBuilder(builder: _adaptiveChartWidgetBuilder!.builder),
-            SizedBox(height: 20),
-            _minPeriod == null
-                ? SizedBox()
-                : Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text("Next lowest:"),
-                      Text(
-                        _minPeriod!.prettyPrintPeriod(),
-                        style: StyleComponents.smallText,
+      child: StyleComponents.pagePaddingWrapper(
+        Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              const SizedBox(height: 40),
+              StyleComponents.paddingWrapper(
+                BigAnimatedCounter(count: _counter.toDouble()),
+              ),
+              const SizedBox(height: 40),
+              _adaptiveChartWidgetBuilder == null
+                  ? SizedBox()
+                  : StyleComponents.paddingWrapper(
+                      LayoutBuilder(
+                        builder: _adaptiveChartWidgetBuilder!.builder,
                       ),
-                      Text(
-                        "${_minPeriod?.value.get()} ${CarbonIntensityChartGeneratorFactory.unit}",
-                        style: StyleComponents.smallText,
+                    ),
+              const SizedBox(height: 20),
+              _minPeriod == null
+                  ? SizedBox()
+                  : StyleComponents.paddingWrapper(
+                      Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text("Next lowest:"),
+                          Text(
+                            _minPeriod!.prettyPrintPeriod(),
+                            style: StyleComponents.smallText,
+                          ),
+                          Text(
+                            "${_minPeriod?.value.get()} ${CarbonIntensityChartGeneratorFactory.unit}",
+                            style: StyleComponents.smallText,
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-          ],
+                    ),
+            ],
+          ),
         ),
       ),
     );

@@ -139,88 +139,98 @@ class _GasPricesPageState extends State<GasPricesPage>
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints constraints) {
         return !_isApiKeyValid
-            ? style.getInvalidApiKeyWidget()
+            ? StyleComponents.pagePaddingWrapper(style.getInvalidApiKeyWidget())
             : SingleChildScrollView(
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: <Widget>[
-                      const SizedBox(height: 40),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          DropdownMenu<Product>(
-                            width: constraints.maxWidth > _widthThreshold
-                                ? null
-                                : _menuWidth,
-                            initialSelection: defaultProduct,
-                            dropdownMenuEntries: _productList
-                                .map(
-                                  (product) => DropdownMenuEntry(
-                                    value: product,
-                                    label: product.name,
-                                  ),
-                                )
-                                .toList(),
-                            onSelected: (Product? product) {
-                              _productCode =
-                                  product?.code ??
-                                  GasPricesPage.defaultProductCode;
-                              _refreshTariffCodeList();
-                            },
-                            requestFocusOnTap: true,
-                            label: const Text("Product"),
+                child: StyleComponents.pagePaddingWrapper(
+                  Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: <Widget>[
+                        const SizedBox(height: 40),
+                        StyleComponents.paddingWrapper(
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              DropdownMenu<Product>(
+                                width: constraints.maxWidth > _widthThreshold
+                                    ? null
+                                    : _menuWidth,
+                                initialSelection: defaultProduct,
+                                dropdownMenuEntries: _productList
+                                    .map(
+                                      (product) => DropdownMenuEntry(
+                                        value: product,
+                                        label: product.name,
+                                      ),
+                                    )
+                                    .toList(),
+                                onSelected: (Product? product) {
+                                  _productCode =
+                                      product?.code ??
+                                      GasPricesPage.defaultProductCode;
+                                  _refreshTariffCodeList();
+                                },
+                                requestFocusOnTap: true,
+                                label: const Text("Product"),
+                              ),
+                              const SizedBox(width: 40),
+                              DropdownMenu<Tariff>(
+                                width: constraints.maxWidth > _widthThreshold
+                                    ? null
+                                    : _menuWidth,
+                                initialSelection: defaultTariff,
+                                dropdownMenuEntries: _tariffList
+                                    .map(
+                                      (tariff) => DropdownMenuEntry(
+                                        value: tariff,
+                                        label: tariff.name,
+                                      ),
+                                    )
+                                    .toList(),
+                                onSelected: (Tariff? tariff) {
+                                  _tariffCode =
+                                      tariff?.code ??
+                                      GasPricesPage.defaultTariffCode;
+                                },
+                                requestFocusOnTap: true,
+                                label: const Text("Tariff"),
+                              ),
+                              const SizedBox(width: 24),
+                              TextButton(
+                                style: style.simpleButtonStyle(),
+                                child: Icon(Icons.refresh_rounded),
+                                onPressed: _refreshAsync,
+                              ),
+                            ],
                           ),
-                          const SizedBox(width: 40),
-                          DropdownMenu<Tariff>(
-                            width: constraints.maxWidth > _widthThreshold
-                                ? null
-                                : _menuWidth,
-                            initialSelection: defaultTariff,
-                            dropdownMenuEntries: _tariffList
-                                .map(
-                                  (tariff) => DropdownMenuEntry(
-                                    value: tariff,
-                                    label: tariff.name,
-                                  ),
-                                )
-                                .toList(),
-                            onSelected: (Tariff? tariff) {
-                              _tariffCode =
-                                  tariff?.code ??
-                                  GasPricesPage.defaultTariffCode;
-                            },
-                            requestFocusOnTap: true,
-                            label: const Text("Tariff"),
+                        ),
+                        const SizedBox(height: 20),
+                        StyleComponents.paddingWrapper(
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              BigAnimatedCounter(
+                                count: _currentPrice,
+                                doublePrinter: AnimatedCounter.toNDecimalPlaces(
+                                  2,
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              style.subHeadingTextWithPadding("p/kWh"),
+                            ],
                           ),
-                          const SizedBox(width: 24),
-                          TextButton(
-                            style: style.simpleButtonStyle(),
-                            child: Icon(Icons.refresh_rounded),
-                            onPressed: _refreshAsync,
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 20),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          BigAnimatedCounter(
-                            count: _currentPrice,
-                            doublePrinter: AnimatedCounter.toNDecimalPlaces(2),
-                          ),
-                          const SizedBox(width: 10),
-                          style.subHeadingTextWithPadding("p/kWh"),
-                        ],
-                      ),
-                      const SizedBox(height: 20),
-                      _currentPeriod == null
-                          ? const SizedBox(height: 20)
-                          : Text(
-                              "Price valid since ${_currentPeriod!.prettyPrintPeriod()}",
-                              style: StyleComponents.smallText,
-                            ),
-                    ],
+                        ),
+                        const SizedBox(height: 20),
+                        _currentPeriod == null
+                            ? const SizedBox(height: 20)
+                            : StyleComponents.paddingWrapper(
+                                Text(
+                                  "Price valid since ${_currentPeriod!.prettyPrintPeriod()}",
+                                  style: StyleComponents.smallText,
+                                ),
+                              ),
+                      ],
+                    ),
                   ),
                 ),
               );

@@ -117,4 +117,11 @@ class StyleComponents {
   static Widget paddingWrapper(Widget inner) {
     return Padding(padding: const EdgeInsets.all(8.0), child: inner);
   }
+
+  static Widget pagePaddingWrapper(Widget inner) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 0, horizontal: 10),
+      child: inner,
+    );
+  }
 }

@@ -179,121 +179,119 @@ class _RegionalPageState extends State<RegionalPage>
     return _hasErrorOccurred
         ? Text(_error.toString())
         : SingleChildScrollView(
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  const SizedBox(height: 40),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Expanded(
-                        child: StyleComponents.paddingWrapper(
-                          TextField(
-                            decoration: InputDecoration(
-                              hintText: 'Enter an outer postcode (e.g. NW5)',
+            child: StyleComponents.pagePaddingWrapper(
+              Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    const SizedBox(height: 40),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Expanded(
+                          child: StyleComponents.paddingWrapper(
+                            TextField(
+                              decoration: InputDecoration(
+                                hintText: 'Enter an outer postcode (e.g. NW5)',
+                              ),
+                              controller: _postcodeController,
                             ),
-                            controller: _postcodeController,
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 24),
-                      TextButton(
-                        style: style.simpleButtonStyle(),
-                        child: Icon(Icons.refresh_rounded),
-                        onPressed: _refreshAsync,
-                      ),
-                    ],
-                  ),
-                  Shimmer(
-                    linearGradient: style.shimmerGradient(),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        ShimmerLoading(
-                          isLoading: _regionName == null,
-                          childGenerator: () => Text(
-                            "Region: $_regionName",
-                            style: StyleComponents.smallText,
-                          ),
-                          placeholder: ShimmerLoading.smallPlaceholder,
-                        ),
-                        SizedBox(height: 20),
-                        BigAnimatedCounter(count: _counter.toDouble()),
-                        SizedBox(height: 40),
-                        ShimmerLoading(
-                          isLoading: _adaptiveChartWidgetBuilder == null,
-                          childGenerator: () => LayoutBuilder(
-                            builder: _adaptiveChartWidgetBuilder!.builder,
-                          ),
-                          placeholder: StyleComponents.paddingWrapper(
-                            ShimmerLoading.squarePlaceholder,
-                          ),
-                        ),
-                        SizedBox(height: 20),
-                        ShimmerLoading(
-                          isLoading: _minPeriod == null,
-                          childGenerator: () => Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text("Next lowest:"),
-                              Text(
-                                _minPeriod!.prettyPrintPeriod(),
-                                style: StyleComponents.smallText,
-                              ),
-                              Text(
-                                "${_minPeriod?.value.get()} ${CarbonIntensityChartGeneratorFactory.unit}",
-                                style: StyleComponents.smallText,
-                              ),
-                              SizedBox(height: 20),
-                            ],
-                          ),
-                          placeholder: StyleComponents.paddingWrapper(
-                            ShimmerLoading.textPlaceholder,
+                        const SizedBox(width: 24),
+                        StyleComponents.paddingWrapper(
+                          TextButton(
+                            style: style.simpleButtonStyle(),
+                            child: Icon(Icons.refresh_rounded),
+                            onPressed: _refreshAsync,
                           ),
                         ),
                       ],
                     ),
-                  ),
-                  const SizedBox(height: 40),
-                  StyleComponents.subHeadingTextWrapper(
-                    "Generation Mix",
-                    Theme.of(context),
-                  ),
-                  Shimmer(
-                    linearGradient: style.shimmerGradient(),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        ShimmerLoading(
-                          isLoading: _adaptivePieChartWidgetBuilder == null,
-                          childGenerator: () => LayoutBuilder(
-                            builder: _adaptivePieChartWidgetBuilder!.builder,
-                          ),
-                          placeholder: StyleComponents.paddingWrapper(
-                            ShimmerLoading.squarePlaceholder,
-                          ),
-                        ),
-                        const SizedBox(height: 40),
-                        ShimmerLoading(
-                          isLoading: _adaptivePieChartWidgetBuilder == null,
-                          childGenerator: () => Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                "Generation data as of: ${_generation.prettyPrintPeriod()}",
+                    Shimmer(
+                      linearGradient: style.shimmerGradient(),
+                      child: StyleComponents.paddingWrapper(
+                        Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            ShimmerLoading(
+                              isLoading: _regionName == null,
+                              childGenerator: () => Text(
+                                "Region: $_regionName",
                                 style: StyleComponents.smallText,
                               ),
-                            ],
-                          ),
-                          placeholder: StyleComponents.paddingWrapper(
-                            ShimmerLoading.textPlaceholder,
-                          ),
+                              placeholder: ShimmerLoading.smallPlaceholder,
+                            ),
+                            const SizedBox(height: 20),
+                            BigAnimatedCounter(count: _counter.toDouble()),
+                            const SizedBox(height: 40),
+                            ShimmerLoading(
+                              isLoading: _adaptiveChartWidgetBuilder == null,
+                              childGenerator: () => LayoutBuilder(
+                                builder: _adaptiveChartWidgetBuilder!.builder,
+                              ),
+                              placeholder: ShimmerLoading.squarePlaceholder,
+                            ),
+                            const SizedBox(height: 20),
+                            ShimmerLoading(
+                              isLoading: _minPeriod == null,
+                              childGenerator: () => Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text("Next lowest:"),
+                                  Text(
+                                    _minPeriod!.prettyPrintPeriod(),
+                                    style: StyleComponents.smallText,
+                                  ),
+                                  Text(
+                                    "${_minPeriod?.value.get()} ${CarbonIntensityChartGeneratorFactory.unit}",
+                                    style: StyleComponents.smallText,
+                                  ),
+                                  SizedBox(height: 20),
+                                ],
+                              ),
+                              placeholder: ShimmerLoading.textPlaceholder,
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 40),
+                    style.subHeadingTextWithPadding("Generation Mix"),
+                    Shimmer(
+                      linearGradient: style.shimmerGradient(),
+                      child: StyleComponents.paddingWrapper(
+                        Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            ShimmerLoading(
+                              isLoading: _adaptivePieChartWidgetBuilder == null,
+                              childGenerator: () => LayoutBuilder(
+                                builder:
+                                    _adaptivePieChartWidgetBuilder!.builder,
+                              ),
+                              placeholder: ShimmerLoading.squarePlaceholder,
+                            ),
+                            const SizedBox(height: 40),
+                            ShimmerLoading(
+                              isLoading: _adaptivePieChartWidgetBuilder == null,
+                              childGenerator: () => Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    "Generation data as of: ${_generation.prettyPrintPeriod()}",
+                                    style: StyleComponents.smallText,
+                                  ),
+                                ],
+                              ),
+                              placeholder: ShimmerLoading.textPlaceholder,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           );

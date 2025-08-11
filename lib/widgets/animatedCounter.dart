@@ -68,8 +68,6 @@ class BigAnimatedCounter extends AnimatedCounter {
   }) : super(duration: ONE_SECOND, textWrapper: _bigText);
 
   static Widget _bigText(String text, ThemeData theme) {
-    return StyleComponents.paddingWrapper(
-      StyleComponents.headlineTextWrapper(text, theme),
-    );
+    return StyleComponents.headlineTextWrapper(text, theme);
   }
 }

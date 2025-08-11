@@ -152,125 +152,123 @@ class _HistoricalCarbonIntensityPageState
     super.build(context);
     final style = StyleComponents(Theme.of(context));
     return SingleChildScrollView(
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const SizedBox(height: 40),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Expanded(
-                  child: StyleComponents.paddingWrapper(
-                    TextField(
-                      decoration: InputDecoration(
-                        hintText: 'Enter an outer postcode (e.g. NW5)',
-                        labelText: "Outer Postcode",
-                      ),
-                      controller: _postcodeController,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Expanded(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Expanded(
-                        child: StyleComponents.paddingWrapper(
-                          TextField(
-                            decoration: const InputDecoration(
-                              labelText: "Start",
-                              hintText: "Input a date",
-                              icon: Icon(Icons.calendar_today),
-                            ),
-                            controller: _startDateController,
-                            readOnly: true,
-                            onTap: () => _selectDateFor(context),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 24),
-                      Expanded(
-                        child: StyleComponents.paddingWrapper(
-                          TextField(
-                            decoration: const InputDecoration(
-                              labelText: "End",
-                              hintText: "Input a date",
-                              icon: Icon(Icons.calendar_today),
-                            ),
-                            controller: _endDateController,
-                            readOnly: true,
-                            onTap: () => _selectDateFor(context),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 24),
-                TextButton(
-                  style: style.simpleButtonStyle(),
-                  child: Icon(Icons.refresh_rounded),
-                  onPressed: _refreshAsync,
-                ),
-              ],
-            ),
-            Shimmer(
-              linearGradient: style.shimmerGradient(),
-              child: Column(
+      child: StyleComponents.pagePaddingWrapper(
+        Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              const SizedBox(height: 40),
+              Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  ShimmerLoading(
-                    isLoading: _regionName == null,
-                    childGenerator: () => Text(
-                      "Region: $_regionName",
-                      style: StyleComponents.smallText,
-                    ),
-                    placeholder: ShimmerLoading.smallPlaceholder,
-                  ),
-                  SizedBox(height: 20),
-                  ShimmerLoading(
-                    isLoading: _adaptiveChartWidgetBuilder == null,
-                    childGenerator: () => LayoutBuilder(
-                      builder: _adaptiveChartWidgetBuilder!.builder,
-                    ),
-                    placeholder: StyleComponents.paddingWrapper(
-                      ShimmerLoading.squarePlaceholder,
-                    ),
-                  ),
-                  SizedBox(height: 20),
-                  ShimmerLoading(
-                    isLoading: _minPeriod == null,
-                    childGenerator: () => Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text("Lowest value:"),
-                        Text(
-                          _minPeriod!.prettyPrintPeriod(),
-                          style: StyleComponents.smallText,
+                  Expanded(
+                    child: StyleComponents.paddingWrapper(
+                      TextField(
+                        decoration: InputDecoration(
+                          hintText: 'Enter an outer postcode (e.g. NW5)',
+                          labelText: "Outer Postcode",
                         ),
-                        Text(
-                          "${_minPeriod?.value.get()} ${CarbonIntensityChartGeneratorFactory.unit}",
-                          style: StyleComponents.smallText,
-                        ),
-                        SizedBox(height: 20),
-                      ],
-                    ),
-                    placeholder: StyleComponents.paddingWrapper(
-                      ShimmerLoading.textPlaceholder,
+                        controller: _postcodeController,
+                      ),
                     ),
                   ),
                 ],
               ),
-            ),
-            const SizedBox(height: 40),
-          ],
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Expanded(
+                          child: TextField(
+                              decoration: const InputDecoration(
+                                labelText: "Start",
+                                hintText: "Input a date",
+                                icon: Icon(Icons.calendar_today),
+                              ),
+                              controller: _startDateController,
+                              readOnly: true,
+                              onTap: () => _selectDateFor(context),
+                            ),
+                        ),
+                        const SizedBox(width: 24),
+                        Expanded(
+                          child:
+                            TextField(
+                              decoration: const InputDecoration(
+                                labelText: "End",
+                                hintText: "Input a date",
+                                icon: Icon(Icons.calendar_today),
+                              ),
+                              controller: _endDateController,
+                              readOnly: true,
+                              onTap: () => _selectDateFor(context),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 24),
+                  StyleComponents.paddingWrapper(
+                    TextButton(
+                      style: style.simpleButtonStyle(),
+                      child: Icon(Icons.refresh_rounded),
+                      onPressed: _refreshAsync,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20,),
+              Shimmer(
+                linearGradient: style.shimmerGradient(),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    ShimmerLoading(
+                      isLoading: _regionName == null,
+                      childGenerator: () => Text(
+                        "Region: $_regionName",
+                        style: StyleComponents.smallText,
+                      ),
+                      placeholder: ShimmerLoading.smallPlaceholder,
+                    ),
+                    const SizedBox(height: 20),
+                    ShimmerLoading(
+                      isLoading: _adaptiveChartWidgetBuilder == null,
+                      childGenerator: () => LayoutBuilder(
+                        builder: _adaptiveChartWidgetBuilder!.builder,
+                      ),
+                      placeholder: ShimmerLoading.squarePlaceholder,
+                    ),
+                    const SizedBox(height: 20),
+                    ShimmerLoading(
+                      isLoading: _minPeriod == null,
+                      childGenerator: () => Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text("Lowest value:"),
+                          Text(
+                            _minPeriod!.prettyPrintPeriod(),
+                            style: StyleComponents.smallText,
+                          ),
+                          Text(
+                            "${_minPeriod?.value.get()} ${CarbonIntensityChartGeneratorFactory.unit}",
+                            style: StyleComponents.smallText,
+                          ),
+                          const SizedBox(height: 20),
+                        ],
+                      ),
+                      placeholder: ShimmerLoading.textPlaceholder,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 40),
+            ],
+          ),
         ),
       ),
     );

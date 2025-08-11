@@ -77,99 +77,107 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     final style = StyleComponents(Theme.of(context));
-    return ListView(
-      children: [
-        const SizedBox(height: 40),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Expanded(
-              child: StyleComponents.paddingWrapper(
-                TextField(
-                  controller: _postcodeController,
-                  decoration: InputDecoration(
-                    hintText: 'Enter an outer postcode (e.g. NW5)',
-                    labelText: "Default Postcode",
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 24),
-          ],
-        ),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Expanded(
-              child: StyleComponents.paddingWrapper(
-                TextField(
-                  controller: _apiKeyController,
-                  decoration: InputDecoration(
-                    hintText: 'Enter your Octopus Agile API key',
-                    labelText: "Octopus API Key",
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 24),
-          ],
-        ),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Expanded(
-              child: StyleComponents.paddingWrapper(
-                RichText(
-                  text: TextSpan(
-                    children: [
-                      TextSpan(
-                        text: "You can generate an API Key",
-                        style: StyleComponents.smallText.copyWith(
-                          fontWeight: FontWeight.normal,
-                          color: Theme.of(context).colorScheme.onSurface,
+    return SingleChildScrollView(
+      child: StyleComponents.pagePaddingWrapper(
+        Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              const SizedBox(height: 40),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: StyleComponents.paddingWrapper(
+                      TextField(
+                        controller: _postcodeController,
+                        decoration: InputDecoration(
+                          hintText: 'Enter an outer postcode (e.g. NW5)',
+                          labelText: "Default Postcode",
                         ),
                       ),
-                      TextSpan(
-                        text: " after logging in to your Octopus account",
-                        style: StyleComponents.smallText.copyWith(
-                          fontWeight: FontWeight.normal,
-                          fontStyle: FontStyle.italic,
-                          decoration: TextDecoration.underline,
-                          color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: StyleComponents.paddingWrapper(
+                      TextField(
+                        controller: _apiKeyController,
+                        decoration: InputDecoration(
+                          hintText: 'Enter your Octopus Agile API key',
+                          labelText: "Octopus API Key",
                         ),
-                        recognizer: TapGestureRecognizer()
-                          ..onTap = () => _launchUrl(Uri.parse(_apiHelperLink)),
                       ),
-                    ],
+                    ),
                   ),
-                ),
+                ],
               ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 24),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Expanded(
-              child: StyleComponents.paddingWrapper(
-                TextButton(
-                  style: style.simpleButtonStyle(),
-                  onPressed: _save,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.save),
-                      const SizedBox(width: 12),
-                      Text("Save", style: StyleComponents.smallText),
-                    ],
+              const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: StyleComponents.paddingWrapper(
+                      RichText(
+                        text: TextSpan(
+                          children: [
+                            TextSpan(
+                              text: "You can generate an API Key",
+                              style: StyleComponents.smallText.copyWith(
+                                fontWeight: FontWeight.normal,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
+                            ),
+                            TextSpan(
+                              text: " after logging in to your Octopus account",
+                              style: StyleComponents.smallText.copyWith(
+                                fontWeight: FontWeight.normal,
+                                fontStyle: FontStyle.italic,
+                                decoration: TextDecoration.underline,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
+                              recognizer: TapGestureRecognizer()
+                                ..onTap = () =>
+                                    _launchUrl(Uri.parse(_apiHelperLink)),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
-                ),
+                ],
               ),
-            ),
-          ],
+              const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: StyleComponents.paddingWrapper(
+                      TextButton(
+                        style: style.simpleButtonStyle(),
+                        onPressed: _save,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.save),
+                            const SizedBox(width: 12),
+                            Text("Save", style: StyleComponents.smallText),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
-      ],
+      ),
     );
   }
 }
