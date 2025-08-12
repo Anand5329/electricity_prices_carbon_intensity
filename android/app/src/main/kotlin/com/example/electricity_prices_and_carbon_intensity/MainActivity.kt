@@ -1,8 +1,8 @@
-package com.example.electricity_prices_and_carbon_intensity
+package dev.green.anand.electricity_prices_and_carbon_intensity
 
 import android.util.Log
-import com.example.electricity_prices_and_carbon_intensity.https.CarbonIntensityCaller
-import com.example.electricity_prices_and_carbon_intensity.https.IntensityData
+import dev.green.anand.electricity_prices_and_carbon_intensity.https.CarbonIntensityCaller
+import dev.green.anand.electricity_prices_and_carbon_intensity.https.IntensityData
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugins.GeneratedPluginRegistrant

@@ -1,4 +1,4 @@
-package com.example.electricity_prices_and_carbon_intensity.https
+package dev.green.anand.electricity_prices_and_carbon_intensity.https
 
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.*

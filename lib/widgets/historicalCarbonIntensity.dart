@@ -184,30 +184,29 @@ class _HistoricalCarbonIntensityPageState
                       children: [
                         Expanded(
                           child: TextField(
-                              decoration: const InputDecoration(
-                                labelText: "Start",
-                                hintText: "Input a date",
-                                icon: Icon(Icons.calendar_today),
-                              ),
-                              controller: _startDateController,
-                              readOnly: true,
-                              onTap: () => _selectDateFor(context),
+                            decoration: const InputDecoration(
+                              labelText: "Start",
+                              hintText: "Input a date",
+                              icon: Icon(Icons.calendar_today),
                             ),
+                            controller: _startDateController,
+                            readOnly: true,
+                            onTap: () => _selectDateFor(context),
+                          ),
                         ),
                         const SizedBox(width: 24),
                         Expanded(
-                          child:
-                            TextField(
-                              decoration: const InputDecoration(
-                                labelText: "End",
-                                hintText: "Input a date",
-                                icon: Icon(Icons.calendar_today),
-                              ),
-                              controller: _endDateController,
-                              readOnly: true,
-                              onTap: () => _selectDateFor(context),
+                          child: TextField(
+                            decoration: const InputDecoration(
+                              labelText: "End",
+                              hintText: "Input a date",
+                              icon: Icon(Icons.calendar_today),
                             ),
+                            controller: _endDateController,
+                            readOnly: true,
+                            onTap: () => _selectDateFor(context),
                           ),
+                        ),
                       ],
                     ),
                   ),
@@ -221,7 +220,7 @@ class _HistoricalCarbonIntensityPageState
                   ),
                 ],
               ),
-              const SizedBox(height: 20,),
+              const SizedBox(height: 20),
               Shimmer(
                 linearGradient: style.shimmerGradient(),
                 child: Column(

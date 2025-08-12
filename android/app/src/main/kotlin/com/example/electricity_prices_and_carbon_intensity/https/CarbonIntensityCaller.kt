@@ -1,4 +1,4 @@
-package com.example.electricity_prices_and_carbon_intensity.https
+package dev.green.anand.electricity_prices_and_carbon_intensity.https
 
 import io.ktor.client.call.body
 import io.ktor.client.statement.HttpResponse
