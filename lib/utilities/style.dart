@@ -1,3 +1,4 @@
+import 'package:electricity_prices_and_carbon_intensity/utilities/generationMixApiCaller.dart';
 import 'package:flutter/material.dart';
 
 class StyleComponents {
@@ -28,13 +29,25 @@ class StyleComponents {
     Colors.blue,
     Colors.green,
     Colors.yellow,
+    Colors.orange,
     Colors.red,
   ];
-  static const List<double> energyStops = [0, 0.3, 0.6, 1];
+  static const List<double> energyStops = [0, 0.3, 0.6, 0.75, 1];
   static const LinearGradient energyGradient = LinearGradient(
     colors: energyColors,
     stops: energyStops,
   );
+  static const Map<EnergySource, Color> energyMap = const <EnergySource, Color>{
+    EnergySource.coal: Color(0xFFA35EE2),
+    EnergySource.other: Color(0xFFF64B05),
+    EnergySource.imports: Color(0xFFFAA203),
+    EnergySource.biomass: Color(0xFF177245),
+    EnergySource.gas: Color(0xFFFFD800),
+    EnergySource.nuclear: Color(0xFF7DA5F6),
+    EnergySource.hydro: Color(0xFFEE82EE),
+    EnergySource.wind: Color(0xFF81F903),
+    EnergySource.solar: Color(0xFF00CCFF),
+  };
 
   static Color? lerp(Gradient gradient, double t) {
     // return lerpGradient(gradient.colors, gradient.stops!, t);// this is used in fl_chart to render.

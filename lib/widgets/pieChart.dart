@@ -29,6 +29,7 @@ abstract class PieChartGeneratorFactory<T> {
   final TextStyle textStyle;
 
   int touchedIndex = -1;
+  bool _touchToggle = false;
 
   PieChartGeneratorFactory(
     this.setStateFn, {
@@ -71,7 +72,20 @@ abstract class PieChartGeneratorFactory<T> {
             touchedIndex = -1;
             return;
           }
-          touchedIndex = pieTouchResponse.touchedSection!.touchedSectionIndex;
+          if (event is FlPointerEnterEvent || event is FlPointerHoverEvent) {
+            touchedIndex = pieTouchResponse.touchedSection!.touchedSectionIndex;
+          } else if (event is FlPointerExitEvent) {
+            touchedIndex = -1;
+          } else if (event is FlTapDownEvent || event is FlLongPressEnd) {
+            if (!_touchToggle) {
+              touchedIndex =
+                  pieTouchResponse.touchedSection!.touchedSectionIndex;
+              _touchToggle = !_touchToggle;
+            } else {
+              touchedIndex = -1;
+              _touchToggle = !_touchToggle;
+            }
+          }
         });
       },
     );
@@ -131,16 +145,27 @@ abstract class PieChartGeneratorFactory<T> {
         });
   }
 
+  static double _threshold = 0.13;
+
   static Map<EnergySource, Color> getDefaultColorMap({
     GenerationMix? genMix,
     LinearGradient gradient = StyleComponents.energyGradient,
   }) {
+    if (EnergySource.values.length <= StyleComponents.energyMap.length) {
+      return Map.from(StyleComponents.energyMap);
+    }
     double accumulator = 0;
     genMix ??= GenerationMix.uniform;
     Map<EnergySource, double> percMap = genMix.toMap();
+    double max = 100;
     return Map.fromEntries(
       EnergySource.values.map((source) {
-        accumulator += percMap[source]! / 100;
+        double delta = percMap[source]! / max;
+        if (delta < _threshold) {
+          max += _threshold - delta;
+          delta = _threshold;
+        }
+        accumulator += delta;
         return MapEntry(source, StyleComponents.lerp(gradient, accumulator)!);
       }),
     );
