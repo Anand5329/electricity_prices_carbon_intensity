@@ -69,20 +69,24 @@ abstract class PieChartGeneratorFactory<T> {
           if (!event.isInterestedForInteractions ||
               pieTouchResponse == null ||
               pieTouchResponse.touchedSection == null) {
-            touchedIndex = -1;
+            if (!_touchToggle) {
+              touchedIndex = -1;
+              _touchToggle = !_touchToggle;
+            }
             return;
           }
           if (event is FlPointerEnterEvent || event is FlPointerHoverEvent) {
             touchedIndex = pieTouchResponse.touchedSection!.touchedSectionIndex;
           } else if (event is FlPointerExitEvent) {
             touchedIndex = -1;
-          } else if (event is FlTapDownEvent || event is FlLongPressEnd) {
+          } else if (event is FlTapDownEvent ||
+              event is FlLongPressEnd ||
+              event is FlPanDownEvent) {
             if (!_touchToggle) {
               touchedIndex =
                   pieTouchResponse.touchedSection!.touchedSectionIndex;
               _touchToggle = !_touchToggle;
             } else {
-              touchedIndex = -1;
               _touchToggle = !_touchToggle;
             }
           }
