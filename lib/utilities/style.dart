@@ -102,6 +102,8 @@ class StyleComponents {
     );
   }
 
+  // TODO: make a widget for lack of connection case for all pages
+
   Widget getInvalidApiKeyWidget() {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
