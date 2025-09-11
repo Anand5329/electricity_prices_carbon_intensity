@@ -102,10 +102,19 @@ class StyleComponents {
     );
   }
 
-  // TODO: make a widget for lack of connection case for all pages
+  static Widget getNoNetworkConnectionWidget(Exception e) {
+    return const Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const Icon(Icons.wifi_off_rounded),
+        const SizedBox(height: 24),
+        const Text("Device offline - Please check your connection"),
+      ],
+    );
+  }
 
   Widget getInvalidApiKeyWidget() {
-    return Column(
+    return const Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Icon(Icons.warning),

@@ -177,7 +177,9 @@ class _RegionalPageState extends State<RegionalPage>
     super.build(context);
     final style = StyleComponents(Theme.of(context));
     return _hasErrorOccurred
-        ? Text(_error.toString())
+        ? StyleComponents.pagePaddingWrapper(
+            StyleComponents.getNoNetworkConnectionWidget(_error),
+          )
         : SingleChildScrollView(
             child: StyleComponents.pagePaddingWrapper(
               Center(
