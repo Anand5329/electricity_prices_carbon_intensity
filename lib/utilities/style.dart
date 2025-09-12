@@ -113,7 +113,7 @@ class StyleComponents {
     );
   }
 
-  Widget getInvalidApiKeyWidget() {
+  static Widget getInvalidApiKeyWidget() {
     return const Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [

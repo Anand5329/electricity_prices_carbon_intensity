@@ -57,7 +57,7 @@ class _RegionalPageState extends State<RegionalPage>
   final _postcodeController = TextEditingController();
 
   bool _hasErrorOccurred = false;
-  var _error = null;
+  Exception? _error;
 
   @override
   void dispose() {
@@ -113,8 +113,10 @@ class _RegionalPageState extends State<RegionalPage>
       setState(() {
         _regionName = regional.shortname;
         _generation = generation;
+        _error = null;
+        _hasErrorOccurred = false;
       });
-    } catch (e) {
+    } on Exception catch (e) {
       setState(() {
         _hasErrorOccurred = true;
         _error = e;
@@ -178,7 +180,7 @@ class _RegionalPageState extends State<RegionalPage>
     final style = StyleComponents(Theme.of(context));
     return _hasErrorOccurred
         ? StyleComponents.pagePaddingWrapper(
-            StyleComponents.getNoNetworkConnectionWidget(_error),
+            StyleComponents.getNoNetworkConnectionWidget(_error!),
           )
         : SingleChildScrollView(
             child: StyleComponents.pagePaddingWrapper(

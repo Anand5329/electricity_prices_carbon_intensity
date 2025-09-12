@@ -65,6 +65,9 @@ class _ElectricityPricesPageState extends State<ElectricityPricesPage>
     updateKeepAlive();
   }
 
+  bool _hasOtherErrorOccurred = false;
+  Exception? _otherError;
+
   @override
   bool get wantKeepAlive => keepAlive;
 
@@ -109,7 +112,14 @@ class _ElectricityPricesPageState extends State<ElectricityPricesPage>
         _isLoading = true;
       });
       DateTime now = DateTime.now();
-      _productList = await _caller.getProducts(availableAt: now);
+      try {
+        _productList = await _caller.getProducts(availableAt: now);
+        _hasOtherErrorOccurred = false;
+        _otherError = null;
+      } on Exception catch (e) {
+        _hasOtherErrorOccurred = true;
+        _otherError = e;
+      }
       _refreshTariffCodeList();
       setState(() {
         _isLoading = false;
@@ -185,7 +195,13 @@ class _ElectricityPricesPageState extends State<ElectricityPricesPage>
     return LayoutBuilder(
       builder: (BuildContext context, BoxConstraints constraints) {
         return !_isApiKeyValid
-            ? StyleComponents.pagePaddingWrapper(style.getInvalidApiKeyWidget())
+            ? StyleComponents.pagePaddingWrapper(
+                StyleComponents.getInvalidApiKeyWidget(),
+              )
+            : _hasOtherErrorOccurred
+            ? StyleComponents.pagePaddingWrapper(
+                StyleComponents.getNoNetworkConnectionWidget(_otherError!),
+              )
             : SingleChildScrollView(
                 child: StyleComponents.pagePaddingWrapper(
                   Center(
