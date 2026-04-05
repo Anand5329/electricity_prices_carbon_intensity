@@ -18,6 +18,7 @@ var logger = Logger(filter: null, printer: PrettyPrinter(), output: null);
 
 class RegionalPage extends StatefulWidget {
   final String title;
+  static final String UNIT = "gCO2/kWh";
   const RegionalPage({super.key, this.title = "Carbon Intensity"});
 
   @override
@@ -179,6 +180,7 @@ class _RegionalPageState extends State<RegionalPage>
     super.build(context);
     final style = StyleComponents(Theme.of(context));
     return _hasErrorOccurred
+    // TODO: add refresh pull/button to reload when network is back
         ? StyleComponents.pagePaddingWrapper(
             StyleComponents.getNoNetworkConnectionWidget(_error!),
           )
@@ -227,7 +229,14 @@ class _RegionalPageState extends State<RegionalPage>
                               placeholder: ShimmerLoading.smallPlaceholder,
                             ),
                             const SizedBox(height: 20),
-                            BigAnimatedCounter(count: _counter.toDouble()),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                BigAnimatedCounter(count: _counter.toDouble()),
+                                const SizedBox(width: 10),
+                                style.smallThemedTextWithPadding(RegionalPage.UNIT),
+                              ],
+                            ),
                             const SizedBox(height: 40),
                             ShimmerLoading(
                               isLoading: _adaptiveChartWidgetBuilder == null,

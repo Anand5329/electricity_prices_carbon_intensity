@@ -78,6 +78,10 @@ class StyleComponents {
     return paddingWrapper(subHeadingTextWrapper(text, _theme));
   }
 
+  Widget smallThemedTextWithPadding(String text) {
+    return paddingWrapper(smallThemedTextWrapper(text, _theme));
+  }
+
   ButtonStyle simpleButtonStyle() {
     return ButtonStyle(
       textStyle: WidgetStateProperty.all(_theme.textTheme.displaySmall),
@@ -133,6 +137,13 @@ class StyleComponents {
 
   static Widget subHeadingTextWrapper(String text, ThemeData theme) {
     final textStyle = theme.textTheme.displayMedium!.copyWith(
+      color: theme.colorScheme.primary,
+    );
+    return Text(text, style: textStyle);
+  }
+
+  static Widget smallThemedTextWrapper(String text, ThemeData theme) {
+    final textStyle = theme.textTheme.displaySmall!.copyWith(
       color: theme.colorScheme.primary,
     );
     return Text(text, style: textStyle);
